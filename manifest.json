@@ -1,0 +1,10 @@
+{
+  "name": "Locked In",
+  "description": "Help yall to lock in",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "locked_in.html",
+    "default_icon": "locked_in.jpg"
+  }
+}
