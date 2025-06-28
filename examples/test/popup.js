@@ -1,7 +1,6 @@
 document.getElementById('create-group').addEventListener('click', async () => {
     // Query all tabs in the current window
     await createTabGroup();
-    return;
 });
 
 document.getElementById('close-group').addEventListener('click', async () => {
@@ -20,7 +19,7 @@ document.getElementById('close-group').addEventListener('click', async () => {
     if (tabIds.length > 0) {
         await chrome.tabs.remove(tabIds);
     }
-    return;
+  
 });
 
 
@@ -77,7 +76,7 @@ async function createTabGroup() {
         // Create a new group with the current tab
         const groupId = await chrome.tabs.group({ tabIds: [tab.id] });
     }
-    return;
+    
 }
 
 async function getTabGroups() {
