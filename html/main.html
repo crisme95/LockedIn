@@ -1,0 +1,43 @@
+<link rel="stylesheet" href="../css/main.css" />
+
+<html>
+
+<div id="page-1" class="page" style="display:none;"></div>
+<div id="page-2" class="page" style="display:none;"></div>
+<div id="page-3" class="page" style="display:none;"></div>
+
+<head>
+  <title>Locked In</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    #top-bar {
+      background: #222;
+      color: white;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #page-buttons button {
+      margin-left: 5px;
+    }
+    #content {
+      padding: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="top-bar">
+    <div>Page: <span id="current-page">1</span></div>
+    <div id="page-buttons">
+      <button data-page="1">Page 1</button>
+      <button data-page="2">Page 2</button>
+      <button data-page="3">Page 3</button>
+    </div>
+  </div>
+  <div id="content"></div>
+  <script type="module" src="../scripts/main.js"></script>
+</body>
+
+</html>

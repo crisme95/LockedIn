@@ -4,8 +4,8 @@
   "version": "1.0",
   "manifest_version": 3,
   "action": {
-    "default_popup": "html/popup.html",
-    "default_icon": "images/icon.png"
+    "default_popup": "html/main.html",
+    "default_icon": "assets/icon.png"
   },
   "background": {
     "service_worker": "scripts/groupTabs.js"
