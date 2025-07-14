@@ -1,18 +1,19 @@
 {
-  "name": "LockedIn",
-  "description": "Productivity Tool for Chrome",
-  "version": "1.0",
-  "manifest_version": 3,
-  "action": {
-    "default_popup": "html/main.html",
-    "default_icon": "assets/icon.png"
-  },
-  "background": {
-    "service_worker": "scripts/groupTabs.js"
-  },
-  "permissions": [
-    "tabs",
-    "tabGroups",
-    "contextMenus"
-  ]
+    "name": "LockedIn",
+    "description": "Productivity Tool for Chrome",
+    "version": "1.0",
+    "manifest_version": 3,
+    "action": {
+        "default_popup": "html/main.html",
+        "default_icon": "assets/icon.png"
+    },
+    "background": {
+        "service_worker": "scripts/groupTabs.js"
+    },
+    "permissions": [
+        "tabs",
+        "tabGroups",
+        "contextMenus",
+        "storage"
+    ]
 }
