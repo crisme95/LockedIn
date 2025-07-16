@@ -1,12 +1,18 @@
+<!DOCTYPE html>
 <html>
   
 <body>
-  <h1>Hello!</h1>
-  <button id="tab-group-dropdown">Show Tab Groups</button>
-  <button id="create-group">Create a new tab group</button>
-  <button id="close-group">Close the current tab group</button>
-  <button id="new-session">Start a new session</button>
-  <script src="../../scripts/pages/1.js"></script>
+  <h1>LockedIn</h1>
+  <h2>Distracting Sites</h2>
+  <button id="show-distracting-domains">Show My Distracting Sites</button>
+  <div id="distracting-domains-container">
+    <!-- The list of sites will be inserted here -->
+  </div>
+
+  <script type="module">
+    import { init } from './1.js';
+    init();
+  </script>
 </body>
 
 </html>
