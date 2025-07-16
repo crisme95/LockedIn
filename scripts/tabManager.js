@@ -102,6 +102,22 @@ function saveDomainAsDistracting(urlString) {
 }
 
 /**
+ * Deletes a domain from the distracting domains list in chrome.storage.sync.
+ * @param {string} domain The domain to delete.
+ */
+function deleteDomainFromDistracting(domain) {
+    const storageKey = "distractingDomains";
+    chrome.storage.sync.get([storageKey], (result) => {
+        const domains = result[storageKey] || [];
+        const updatedDomains = domains.filter(d => d !== domain);
+        chrome.storage.sync.set({ [storageKey]: updatedDomains }, () => {
+            console.log(`Deleted ${domain} from distracting domains list.`);
+        });
+    });
+}
+
+
+/**
  * Saves the distracting tab's URL and Title to chrome.storage.sync.
  * @param {chrome.tabs.Tab} tab The tab object to save.
  */
