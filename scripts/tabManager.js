@@ -144,3 +144,18 @@ function saveTabAsDistracting(tab) {
         }
     });
 }
+
+/**
+ * Deletes a tab from the distracting tabs list in chrome.storage.sync.
+ * @param {chrome.tabs.Tab} tab The tab object to delete.
+ */
+function deleteTabFromDistracting(tab) {
+    const storageKey = "distractingTabs";
+    chrome.storage.sync.get([storageKey], (result) => {
+        const tabs = result[storageKey] || [];
+        const updatedTabs = tabs.filter(savedTab => savedTab.url !== tab.url);
+        chrome.storage.sync.set({ [storageKey]: updatedTabs }, () => {
+            console.log(`Deleted ${tab.url} from distracting tabs list.`);
+        });
+    });
+}
