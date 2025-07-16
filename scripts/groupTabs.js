@@ -86,9 +86,17 @@ chrome.alarms.onAlarm.addListener((alarm) => {
         chrome.storage.local.get(["timer", "isRunning"], (res) => {
             if(res.isRunning){
                 let timer = res.timer + 1
-                console.log(timer)
+                let isRunning = true
+                if(timer === 10){
+                    this.registration.showNotification("workTimer", {
+                        body: "Work session complete",
+                    })
+                    timer = 0
+                    isRunning = false
+                }
                 chrome.storage.local.set({
                     timer, 
+                    isRunning,
                 })
             }
         })
