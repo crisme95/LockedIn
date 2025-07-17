@@ -159,7 +159,6 @@ function deleteTabFromDistracting(tab) {
         });
     });
 }
-
 // Timer -------------------------------
 chrome.alarms.create("workTimer", {
     periodInMinutes: 1 / 60,

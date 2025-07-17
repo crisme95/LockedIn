@@ -21,7 +21,6 @@ export function init() {
     //         await chrome.tabs.remove(tabIds);
     //     }
     // });
-
     // document.getElementById('new-session').addEventListener('click', async () => {
     //     const groups = await getTabGroups();
     //     const prevDropdown = document.getElementById('tab-group-dropdown');
@@ -157,6 +156,6 @@ async function displayDistractingDomains() {
 // async function getTabGroups() {
 //     return await chrome.tabGroups.query({});
 // }
-
 // Calls init once the html doc fully parsed
 document.addEventListener('DOMContentLoaded',init);
+
