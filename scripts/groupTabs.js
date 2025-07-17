@@ -77,31 +77,44 @@ async function groupTab(tab, isProductive) {
 
 }
 
+// Timer -------------------------------
 chrome.alarms.create("workTimer", {
     periodInMinutes: 1 / 60,
 })
 
+// Increments timer and notifies user
 chrome.alarms.onAlarm.addListener((alarm) => {
-    if(alarm.name === "workTimer"){
-        chrome.storage.local.get(["timer", "isRunning"], (res) => {
-            if(res.isRunning){
-                let timer = res.timer + 1
-                let isRunning = true
-                if(timer === 10){
-                    this.registration.showNotification("workTimer", {
-                        body: "Work session complete",
-                    })
-                    timer = 0
-                    isRunning = false
-                }
-                chrome.storage.local.set({
-                    timer, 
-                    isRunning,
-                })
-            }
-        })
+  if (alarm.name !== "workTimer") return;
+  chrome.storage.local.get(
+    ["timer", "isRunning", "timerThreshold"],
+    (res) => {
+      const { timer = 0, isRunning = false, timerThreshold = 0 } = res;
+
+      if (!isRunning) return;
+
+      // increment
+      let newTimer = timer + 1;
+      let running   = true;
+
+      // compare **against** the stored threshold
+      if (newTimer === timerThreshold) {
+        // show your notification
+        self.registration.showNotification("workTimer", {
+          body: "Work session complete",
+        });
+        // reset
+        newTimer = 0;
+        running  = false;
+      }
+
+      // persist updated values
+      chrome.storage.local.set({
+        timer: newTimer,
+        isRunning: running,
+      });
     }
-})
+  );
+});
 
 chrome.storage.local.get(["timer", "isRunning"], (res) => {
     chrome.storage.local.set({

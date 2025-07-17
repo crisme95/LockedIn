@@ -1,4 +1,7 @@
+let enteredTime = 0;
+
 export function init() {
+    // Tab Group -----------------------------------------------------------------------
     document.getElementById('tab-group-dropdown').addEventListener('click', async () => {
         console.log("hallo");
     });
@@ -74,43 +77,71 @@ export function init() {
             }
         }
     });
-}
 
+    // Timer --------------------------------------------
+    // Initalization
+    const timeDisplay = document.getElementById('time');
+    const timeInput   = document.getElementById('time-input');
+    const submitBtn   = document.querySelector('button[type="submit"]');
+    const startBtn    = document.getElementById('start-timer');
+    const resetBtn    = document.getElementById('reset-timer');
+
+    // Error Checking
+    if (!timeDisplay || !timeInput || !submitBtn) {
+        console.warn('Timer elements not found; check your HTML ids.');
+        return;
+    }
+
+    submitBtn.addEventListener('click', e => {
+        e.preventDefault();
+        // Stores inputted time 
+        enteredTime = parseInt(timeInput.value, 10) * 60 || 0;
+        chrome.storage.local.set({ timerThreshold: enteredTime }, () => {
+            const mins = String(Math.floor(enteredTime/60)).padStart(2, '0');
+            const secs = String(enteredTime % 60).padStart(2, '0');
+            timeDisplay.textContent = `${mins}:${secs}`;
+            });
+    });
+    // Starts Timer
+    startBtn?.addEventListener('click', () => {
+        chrome.storage.local.get('isRunning', res => {
+            // Change bool 
+            const now = !res.isRunning;
+            chrome.storage.local.set({ isRunning: now }, () => {
+                // Change Text
+                startBtn.textContent = now ? 'Pause timer' : 'Start timer';
+            });
+        });
+    });
+
+    // Resets Timer
+    resetBtn?.addEventListener('click', () => {
+        // Change vars and text
+        chrome.storage.local.set({ timer: 0, isRunning: false }, () => {
+            startBtn.textContent = 'Start timer';
+        });
+    });
+    //
+    updateTime()
+    setInterval(updateTime, 1000);
+}
+// Updates the display of the timer
+function updateDisplay(seconds, el) {
+  const m = String(Math.floor(seconds/60)).padStart(2, '0');
+  const s = String(seconds % 60).padStart(2, '0');
+  el.textContent = `${m}:${s}`;
+}
+// Checks timer values, updates vars and timer text
 function updateTime() {
-    chrome.storage.local.get(["timer"], (res) => {
-        const time = document.getElementById("time")
-        const minutes = `${25 - Math.ceil(res.timer / 60)}`.padStart(2,"0")
-        let seconds = "00"
-        if(res.timer % 60 != 0){
-            seconds = `${60 - res.timer % 60}`.padStart(2,"0")
-        }
-        time.textContent = `${minutes}:${seconds}`
-    })
+  chrome.storage.local.get(['timer','timerThreshold'], res => {
+    const elapsed = res.timer || 0; // How many seconds have elapsed
+    const thresh  = res.timerThreshold || 0; // User's target duration in seconds
+    const left    = Math.max(thresh - elapsed, 0); // Seconds left
+    const el      = document.getElementById('time'); // Display element 
+    if (el) updateDisplay(left, el);
+  });
 }
 
-updateTime()
-setInterval(updateTime, 1000);
-
-const startTimerBtn = document.getElementById("start-timer")
-startTimerBtn.addEventListener("click", () => {
-    chrome.storage.local.get(["isRunning"], (res) => {
-        chrome.storage.local.set({
-            isRunning: !res.isRunning,
-        }, () => {
-            startTimerBtn.textContent = !res.isRunning ? "Pause timer" : "Start timer"
-        })
-    })
-})
-
-const resetTimerBtn = document.getElementById("reset-timer")
-resetTimerBtn.addEventListener("click", () => {
-    chrome.storage.local.set({ 
-        timer: 0, 
-        isRunning: false,
-    }, () => {
-        startTimerBtn.textContent = "Start timer";
-    })
-})
 async function createTabGroup() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab) {
@@ -124,3 +155,6 @@ async function getTabGroups() {
     const groups = await chrome.tabGroups.query({});
     return groups;
 }
+
+// Calls init once the html doc fully parsed
+document.addEventListener('DOMContentLoaded',init);
