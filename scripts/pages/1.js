@@ -1,3 +1,5 @@
+let enteredTime = 0;
+
 export function init() {
     // document.getElementById('tab-group-dropdown').addEventListener('click', async () => {
     //     console.log("hallo");
@@ -19,7 +21,6 @@ export function init() {
     //         await chrome.tabs.remove(tabIds);
     //     }
     // });
-
     // document.getElementById('new-session').addEventListener('click', async () => {
     //     const groups = await getTabGroups();
     //     const prevDropdown = document.getElementById('tab-group-dropdown');
@@ -49,8 +50,71 @@ export function init() {
     //     }
     // });
 
+    // Timer --------------------------------------------
+    // Initalization
+    const timeDisplay = document.getElementById('time');
+    const timeInput   = document.getElementById('time-input');
+    const submitBtn   = document.querySelector('button[type="submit"]');
+    const startBtn    = document.getElementById('start-timer');
+    const resetBtn    = document.getElementById('reset-timer');
+
+    // Error Checking
+    if (!timeDisplay || !timeInput || !submitBtn) {
+        console.warn('Timer elements not found; check your HTML ids.');
+        return;
+    }
+
+    submitBtn.addEventListener('click', e => {
+        e.preventDefault();
+        // Stores inputted time 
+        enteredTime = parseInt(timeInput.value, 10) * 60 || 0;
+        chrome.storage.local.set({ timerThreshold: enteredTime }, () => {
+            const mins = String(Math.floor(enteredTime/60)).padStart(2, '0');
+            const secs = String(enteredTime % 60).padStart(2, '0');
+            timeDisplay.textContent = `${mins}:${secs}`;
+            });
+    });
+    // Starts Timer
+    startBtn?.addEventListener('click', () => {
+        chrome.storage.local.get('isRunning', res => {
+            // Change bool 
+            const now = !res.isRunning;
+            chrome.storage.local.set({ isRunning: now }, () => {
+                // Change Text
+                startBtn.textContent = now ? 'Pause timer' : 'Start timer';
+            });
+        });
+    });
+
+    // Resets Timer
+    resetBtn?.addEventListener('click', () => {
+        // Change vars and text
+        chrome.storage.local.set({ timer: 0, isRunning: false }, () => {
+            startBtn.textContent = 'Start timer';
+        });
+    });
+    //
+    updateTime()
+    setInterval(updateTime, 1000);
+
     // Event listener for the button to show distracting domains.
     document.getElementById('show-distracting-domains').addEventListener('click', displayDistractingDomains);
+}
+// Updates the display of the timer
+function updateDisplay(seconds, el) {
+  const m = String(Math.floor(seconds/60)).padStart(2, '0');
+  const s = String(seconds % 60).padStart(2, '0');
+  el.textContent = `${m}:${s}`;
+}
+// Checks timer values, updates vars and timer text
+function updateTime() {
+  chrome.storage.local.get(['timer','timerThreshold'], res => {
+    const elapsed = res.timer || 0; // How many seconds have elapsed
+    const thresh  = res.timerThreshold || 0; // User's target duration in seconds
+    const left    = Math.max(thresh - elapsed, 0); // Seconds left
+    const el      = document.getElementById('time'); // Display element 
+    if (el) updateDisplay(left, el);
+  });
 }
 
 /*
@@ -82,7 +146,6 @@ async function displayDistractingDomains() {
     container.appendChild(ul);
 }
 
-
 // async function createTabGroup() {
 //     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 //     if (tab) {
@@ -93,3 +156,6 @@ async function displayDistractingDomains() {
 // async function getTabGroups() {
 //     return await chrome.tabGroups.query({});
 // }
+// Calls init once the html doc fully parsed
+document.addEventListener('DOMContentLoaded',init);
+
