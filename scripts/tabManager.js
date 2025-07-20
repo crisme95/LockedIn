@@ -173,6 +173,7 @@ function deleteTabFromDistracting(tab) {
         });
     });
 }
+
 // Timer -------------------------------
 chrome.alarms.create("workTimer", {
     periodInMinutes: 1 / 60,
@@ -220,21 +221,35 @@ chrome.storage.local.get(["timer", "isRunning"], (res) => {
 })
 
 chrome.tabs.onActivated.addListener(activeInfo => {
-    chrome.tabs.get(activeInfo.tabId, tab => {
+    chrome.tabs.get(activeInfo.tabId, async (tab) => {
         if (tab.url) {
             const url = new URL(tab.url);
             const domain = url.hostname;
-            console.log(url);
-            console.log(domain);
-            isDomainDistracting(domain).then(isDistracting => {
-                if (isDistracting) {
-                    console.log(`${domain} is distracting.`);
-                    // TODO: Add tab locking logic here
-                } else {
-                    console.log(`${domain} is not distracting.`);
-                }
+
+            // Don't lock the extension's own pages.
+            if (url.protocol === 'chrome-extension:') {
+                return;
+            }
+
+            const isDistracting = await isDomainDistracting(domain);
+            if (!isDistracting) {
+                return;
+            }
+
+            // Check if the tab is already unlocked in this session
+            const sessionKey = `unlocked_${domain}`;
+            const sessionResult = await chrome.storage.session.get([sessionKey]);
+            if (sessionResult[sessionKey]) {
+                console.log(`${domain} is distracting but already unlocked this session.`);
+                return;
+            }
+
+
+            console.log(`${domain} is distracting.`);
+            // Redirect to the locked page
+            chrome.tabs.update(tab.id, {
+                url: chrome.runtime.getURL('html/locked.html') + '?url=' + encodeURIComponent(tab.url)
             });
         }
     });
 });
-
