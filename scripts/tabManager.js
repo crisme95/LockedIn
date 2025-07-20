@@ -116,6 +116,20 @@ function deleteDomainFromDistracting(domain) {
     });
 }
 
+/**
+ * Checks if a domain is in the distracting domains list.
+ * @param {string} domain The domain to check.
+ * @returns {Promise<boolean>} A promise that resolves to true if the domain is distracting, false otherwise.
+ */
+function isDomainDistracting(domain) {
+    const storageKey = "distractingDomains";
+    return new Promise((resolve) => {
+        chrome.storage.sync.get([storageKey], (result) => {
+            const domains = result[storageKey] || [];
+            resolve(domains.includes(domain));
+        });
+    });
+}
 
 /**
  * Saves the distracting tab's URL and Title to chrome.storage.sync.
@@ -159,6 +173,7 @@ function deleteTabFromDistracting(tab) {
         });
     });
 }
+
 // Timer -------------------------------
 chrome.alarms.create("workTimer", {
     periodInMinutes: 1 / 60,
@@ -166,36 +181,36 @@ chrome.alarms.create("workTimer", {
 
 // Increments timer and notifies user
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name !== "workTimer") return;
-  chrome.storage.local.get(
-    ["timer", "isRunning", "timerThreshold"],
-    (res) => {
-      const { timer = 0, isRunning = false, timerThreshold = 0 } = res;
+    if (alarm.name !== "workTimer") return;
+    chrome.storage.local.get(
+        ["timer", "isRunning", "timerThreshold"],
+        (res) => {
+            const { timer = 0, isRunning = false, timerThreshold = 0 } = res;
 
-      if (!isRunning) return;
+            if (!isRunning) return;
 
-      // increment
-      let newTimer = timer + 1;
-      let running   = true;
+            // increment
+            let newTimer = timer + 1;
+            let running = true;
 
-      // compare **against** the stored threshold
-      if (newTimer === timerThreshold) {
-        // show your notification
-        self.registration.showNotification("workTimer", {
-          body: "Work session complete",
-        });
-        // reset
-        newTimer = 0;
-        running  = false;
-      }
+            // compare **against** the stored threshold
+            if (newTimer === timerThreshold) {
+                // show your notification
+                self.registration.showNotification("workTimer", {
+                    body: "Work session complete",
+                });
+                // reset
+                newTimer = 0;
+                running = false;
+            }
 
-      // persist updated values
-      chrome.storage.local.set({
-        timer: newTimer,
-        isRunning: running,
-      });
-    }
-  );
+            // persist updated values
+            chrome.storage.local.set({
+                timer: newTimer,
+                isRunning: running,
+            });
+        }
+    );
 });
 
 chrome.storage.local.get(["timer", "isRunning"], (res) => {
@@ -204,3 +219,37 @@ chrome.storage.local.get(["timer", "isRunning"], (res) => {
         isRunning: "isRunning" in res ? res.isRunning : false,
     })
 })
+
+chrome.tabs.onActivated.addListener(activeInfo => {
+    chrome.tabs.get(activeInfo.tabId, async (tab) => {
+        if (tab.url) {
+            const url = new URL(tab.url);
+            const domain = url.hostname;
+
+            // Don't lock the extension's own pages.
+            if (url.protocol === 'chrome-extension:') {
+                return;
+            }
+
+            const isDistracting = await isDomainDistracting(domain);
+            if (!isDistracting) {
+                return;
+            }
+
+            // Check if the tab is already unlocked in this session
+            const sessionKey = `unlocked_${domain}`;
+            const sessionResult = await chrome.storage.session.get([sessionKey]);
+            if (sessionResult[sessionKey]) {
+                console.log(`${domain} is distracting but already unlocked this session.`);
+                return;
+            }
+
+
+            console.log(`${domain} is distracting.`);
+            // Redirect to the locked page
+            chrome.tabs.update(tab.id, {
+                url: chrome.runtime.getURL('html/locked.html') + '?url=' + encodeURIComponent(tab.url)
+            });
+        }
+    });
+});
