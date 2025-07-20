@@ -116,6 +116,20 @@ function deleteDomainFromDistracting(domain) {
     });
 }
 
+/**
+ * Checks if a domain is in the distracting domains list.
+ * @param {string} domain The domain to check.
+ * @returns {Promise<boolean>} A promise that resolves to true if the domain is distracting, false otherwise.
+ */
+function isDomainDistracting(domain) {
+    const storageKey = "distractingDomains";
+    return new Promise((resolve) => {
+        chrome.storage.sync.get([storageKey], (result) => {
+            const domains = result[storageKey] || [];
+            resolve(domains.includes(domain));
+        });
+    });
+}
 
 /**
  * Saves the distracting tab's URL and Title to chrome.storage.sync.
@@ -166,36 +180,36 @@ chrome.alarms.create("workTimer", {
 
 // Increments timer and notifies user
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name !== "workTimer") return;
-  chrome.storage.local.get(
-    ["timer", "isRunning", "timerThreshold"],
-    (res) => {
-      const { timer = 0, isRunning = false, timerThreshold = 0 } = res;
+    if (alarm.name !== "workTimer") return;
+    chrome.storage.local.get(
+        ["timer", "isRunning", "timerThreshold"],
+        (res) => {
+            const { timer = 0, isRunning = false, timerThreshold = 0 } = res;
 
-      if (!isRunning) return;
+            if (!isRunning) return;
 
-      // increment
-      let newTimer = timer + 1;
-      let running   = true;
+            // increment
+            let newTimer = timer + 1;
+            let running = true;
 
-      // compare **against** the stored threshold
-      if (newTimer === timerThreshold) {
-        // show your notification
-        self.registration.showNotification("workTimer", {
-          body: "Work session complete",
-        });
-        // reset
-        newTimer = 0;
-        running  = false;
-      }
+            // compare **against** the stored threshold
+            if (newTimer === timerThreshold) {
+                // show your notification
+                self.registration.showNotification("workTimer", {
+                    body: "Work session complete",
+                });
+                // reset
+                newTimer = 0;
+                running = false;
+            }
 
-      // persist updated values
-      chrome.storage.local.set({
-        timer: newTimer,
-        isRunning: running,
-      });
-    }
-  );
+            // persist updated values
+            chrome.storage.local.set({
+                timer: newTimer,
+                isRunning: running,
+            });
+        }
+    );
 });
 
 chrome.storage.local.get(["timer", "isRunning"], (res) => {
@@ -204,3 +218,23 @@ chrome.storage.local.get(["timer", "isRunning"], (res) => {
         isRunning: "isRunning" in res ? res.isRunning : false,
     })
 })
+
+chrome.tabs.onActivated.addListener(activeInfo => {
+    chrome.tabs.get(activeInfo.tabId, tab => {
+        if (tab.url) {
+            const url = new URL(tab.url);
+            const domain = url.hostname;
+            console.log(url);
+            console.log(domain);
+            isDomainDistracting(domain).then(isDistracting => {
+                if (isDistracting) {
+                    console.log(`${domain} is distracting.`);
+                    // TODO: Add tab locking logic here
+                } else {
+                    console.log(`${domain} is not distracting.`);
+                }
+            });
+        }
+    });
+});
+
