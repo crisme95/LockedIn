@@ -174,52 +174,6 @@ function deleteTabFromDistracting(tab) {
     });
 }
 
-// Timer -------------------------------
-chrome.alarms.create("workTimer", {
-    periodInMinutes: 1 / 60,
-})
-
-// Increments timer and notifies user
-chrome.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name !== "workTimer") return;
-    chrome.storage.local.get(
-        ["timer", "isRunning", "timerThreshold"],
-        (res) => {
-            const { timer = 0, isRunning = false, timerThreshold = 0 } = res;
-
-            if (!isRunning) return;
-
-            // increment
-            let newTimer = timer + 1;
-            let running = true;
-
-            // compare **against** the stored threshold
-            if (newTimer === timerThreshold) {
-                // show your notification
-                self.registration.showNotification("workTimer", {
-                    body: "Work session complete",
-                });
-                // reset
-                newTimer = 0;
-                running = false;
-            }
-
-            // persist updated values
-            chrome.storage.local.set({
-                timer: newTimer,
-                isRunning: running,
-            });
-        }
-    );
-});
-
-chrome.storage.local.get(["timer", "isRunning"], (res) => {
-    chrome.storage.local.set({
-        timer: "timer" in res ? res.timer : 0,
-        isRunning: "isRunning" in res ? res.isRunning : false,
-    })
-})
-
 chrome.tabs.onActivated.addListener(activeInfo => {
     chrome.tabs.get(activeInfo.tabId, async (tab) => {
         if (tab.url) {
@@ -252,4 +206,54 @@ chrome.tabs.onActivated.addListener(activeInfo => {
             });
         }
     });
+});
+
+
+
+// Timer -------------------------------
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === "START_TIMER") {
+        chrome.alarms.create("LockedInSession", {
+            when: Date.now() + message.duration
+        });
+        chrome.storage.local.set({ StartingTime: Date.now() });
+
+        console.log("created timer");
+    }
+    else if (message.type === "PAUSE_TIMER") {
+        chrome.alarms.clear("LockedInSession");
+        chrome.storage.local.get(["StartingTime", "RemainingTime"], (data) => {
+            const elapsedTime = Date.now() - data.StartingTime;
+            chrome.storage.local.set({ RemainingTime: (data.RemainingTime - elapsedTime) });
+            // console.log(data.TotalTime - elapsedTime);
+        });
+
+        console.log("Alarm \"Paused\"");
+    }
+    else if (message.type === "CONTINUE_TIMER") {
+        chrome.storage.local.get(["RemainingTime"], (data) => {
+            chrome.alarms.create("LockedInSession", {
+                when: Date.now() + data.RemainingTime
+            });
+
+            chrome.storage.local.set({ StartingTime: Date.now() });
+        });
+    }
+
+    sendResponse();
+    return true;
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === "LockedInSession") {
+        console.log("Lockdown timer ended!");
+
+        chrome.windows.create({
+            url: "../html/alert.html",
+            type: "popup",
+            width: 400,
+            height: 200
+        });
+    }
 });
