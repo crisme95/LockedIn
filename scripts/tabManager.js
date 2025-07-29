@@ -22,7 +22,24 @@ chrome.runtime.onInstalled.addListener(() => {
         title: `Mark as ${DISTRACTING.TITLE}`,
         contexts: ["all"]
     });
+
+    chrome.alarms.create('periodicCheck', {
+        delayInMinutes: 0.0167, // about 1 second
+        periodInMinutes: 0.0167 // about 1 second
+    });
 });
+
+// Listen for the alarm and check all tabs
+chrome.alarms.onAlarm.addListener(alarm => {
+    if (alarm.name === 'periodicCheck') {
+        chrome.tabs.query({}, tabs => {
+            tabs.forEach(tab => {
+                checkTab(tab);
+            });
+        });
+    }
+});
+
 
 /* Handle context menu clicks to mark tabs as "Productive" or "Distracting". */
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
