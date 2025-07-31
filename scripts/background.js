@@ -1,3 +1,4 @@
+// Tab Manager -------------------------------------------
 /* Create group constants for grouping tabs as "Productive" or "Distracting". */
 const DISTRACTING = {
     TITLE: "Distracting",
@@ -24,8 +25,8 @@ chrome.runtime.onInstalled.addListener(() => {
     });
 
     chrome.alarms.create('periodicCheck', {
-        delayInMinutes: 0.0167, // about 1 second
-        periodInMinutes: 0.0167 // about 1 second
+        delayInMinutes: 1/60, // 1 second delay
+        periodInMinutes: 1/60 
     });
 });
 
@@ -207,7 +208,7 @@ async function checkTab(tab) {
         return;
     }
 
-    const isDistracting = await isDomainDistracting(domain); // Assuming this function exists
+    const isDistracting = await isDomainDistracting(domain);
     if (!isDistracting) {
         return;
     }
