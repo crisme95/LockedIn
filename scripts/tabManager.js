@@ -22,7 +22,24 @@ chrome.runtime.onInstalled.addListener(() => {
         title: `Mark as ${DISTRACTING.TITLE}`,
         contexts: ["all"]
     });
+
+    chrome.alarms.create('periodicCheck', {
+        delayInMinutes: 0.0167, // about 1 second
+        periodInMinutes: 0.0167 // about 1 second
+    });
 });
+
+// Listen for the alarm and check all tabs
+chrome.alarms.onAlarm.addListener(alarm => {
+    if (alarm.name === 'periodicCheck') {
+        chrome.tabs.query({}, tabs => {
+            tabs.forEach(tab => {
+                checkTab(tab);
+            });
+        });
+    }
+});
+
 
 /* Handle context menu clicks to mark tabs as "Productive" or "Distracting". */
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
@@ -174,40 +191,52 @@ function deleteTabFromDistracting(tab) {
     });
 }
 
+/**
+ * Checks if a tab is distracting and takes appropriate action.
+ * @param {chrome.tabs.Tab} tab The tab object to check.
+ */
+async function checkTab(tab) {
+    if (!tab || !tab.id || !tab.url || !tab.url.startsWith('http')) {
+        return;
+    }
+
+    const url = new URL(tab.url);
+    const domain = url.hostname;
+
+    if (url.protocol === 'chrome-extension:') {
+        return;
+    }
+
+    const isDistracting = await isDomainDistracting(domain); // Assuming this function exists
+    if (!isDistracting) {
+        return;
+    }
+
+    const sessionKey = `unlocked_${domain}`;
+    const sessionResult = await chrome.storage.session.get([sessionKey]);
+    if (sessionResult[sessionKey]) {
+        return;
+    }
+
+    chrome.tabs.update(tab.id, {
+        url: chrome.runtime.getURL('html/locked.html') + '?url=' + encodeURIComponent(tab.url)
+    });
+}
+
+// Event listener for when a user switches to a different tab
 chrome.tabs.onActivated.addListener(activeInfo => {
-    chrome.tabs.get(activeInfo.tabId, async (tab) => {
-        if (tab.url) {
-            const url = new URL(tab.url);
-            const domain = url.hostname;
-
-            // Don't lock the extension's own pages.
-            if (url.protocol === 'chrome-extension:') {
-                return;
-            }
-
-            const isDistracting = await isDomainDistracting(domain);
-            if (!isDistracting) {
-                return;
-            }
-
-            // Check if the tab is already unlocked in this session
-            const sessionKey = `unlocked_${domain}`;
-            const sessionResult = await chrome.storage.session.get([sessionKey]);
-            if (sessionResult[sessionKey]) {
-                console.log(`${domain} is distracting but already unlocked this session.`);
-                return;
-            }
-
-
-            console.log(`${domain} is distracting.`);
-            // Redirect to the locked page
-            chrome.tabs.update(tab.id, {
-                url: chrome.runtime.getURL('html/locked.html') + '?url=' + encodeURIComponent(tab.url)
-            });
-        }
+    chrome.tabs.get(activeInfo.tabId, tab => {
+        checkTab(tab);
     });
 });
 
+// Event listener for when a tab's URL changes
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    // Only check if the URL has changed to avoid redundant checks
+    if (changeInfo.url) {
+        checkTab(tab);
+    }
+});
 
 
 // Timer -------------------------------
