@@ -1,31 +1,38 @@
-// Locked In State  0 = Standby, 1 = Locked In, 2 = Break
+/**
+ * @timer Runs User Interaction Logic Related to the Timer and Handles UI Visuals
+ */
 
-let taskData = [];
+
+
+// temporary timer for visual updates
 let timerInterval = null;
 
 export function init() {
 
+    // retrieve html elements by id
     const hours = document.getElementById('hours');
     const minutes = document.getElementById('minutes');
     const seconds = document.getElementById('seconds');
-
     const startBtn = document.getElementById("start-btn");
     const passKey = document.getElementById("passkey");
 
-    chrome.storage.local.get({ LockedInState: 0 }, Render);
-
-
-
+    // assign button functionality
     startBtn.addEventListener("click", () => {
         chrome.storage.local.get({ LockedInState: 0 }, UpdateStartBtn);
     });
-
     passKey.addEventListener("click", () => {
         chrome.storage.local.get({ LockedInState: 0 }, UpdatePassKeyBtn);
     });
 
+    // initialize UI, calls function Render
+    chrome.storage.local.get({ LockedInState: 0 }, Render);
 
+    /*********************************************************************************************************************************************************************************************/
 
+    /** 
+     * Function Handles Static UI Elements
+     * @param {*} data LockedInState :: {0:NeutralState, 1:InTimerState, 2:InBreakState}
+    */
     function Render(data) {
         switch (data.LockedInState) {
             case 0:
@@ -87,8 +94,10 @@ export function init() {
         }
     }
 
-
-
+    /**
+     * Function Handles Start Button Functionality, Sets LockedInState
+     * @param {*} data LockedInState :: {0:NeutralState, 1:InTimerState, 2:InBreakState}
+     */
     function UpdateStartBtn(data) {
         switch (data.LockedInState) {
             case 0:
@@ -113,6 +122,10 @@ export function init() {
         chrome.storage.local.get({ LockedInState: 0 }, Render);
     }
 
+    /**
+     * Function Handles PassKey Input Text Functionality, Sets LockedInState
+     * @param {*} data LockedInState :: {0:NeutralState, 1:InTimerState, 2:InBreakState}
+     */
     function UpdatePassKeyBtn(data) {
         if (data.LockedInState > 0) {
             chrome.storage.local.set({ LockedInState: 0 });
@@ -124,10 +137,16 @@ export function init() {
         chrome.storage.local.get({ LockedInState: 0 }, Render);
     }
 
+    /**
+     * Function Converts and Stores Input Time
+     * 
+     * Notifies background.js With Message START_TIMER
+     */
     function StartTimer() {
         const totalTime = ((parseInt(hours.value * 3600) || 0) + (parseInt(minutes.value * 60) || 0) + (parseInt(seconds.value) || 0)) * 1000;
         chrome.storage.local.set({ TotalTime: totalTime });
         chrome.storage.local.set({ RemainingTime: totalTime });
+
         chrome.runtime.sendMessage({ type: "START_TIMER", duration: totalTime }, (response) => {
             chrome.storage.local.get(["StartingTime", "RemainingTime"], (data) => {
                 const elapsed = Date.now() - data.StartingTime;
@@ -138,17 +157,26 @@ export function init() {
         });
     }
 
+    /**
+     * Notifies background.js With Message PAUSE_TIMER
+     */
     function PauseTimer() {
         chrome.runtime.sendMessage({ type: "PAUSE_TIMER" }, (response) => { });
         clearInterval(timerInterval);
     }
 
+    /**
+     * Notifies background.js With Message CONTINUE_TIMER
+     */
     function ContinueTimer() {
         chrome.runtime.sendMessage({ type: "CONTINUE_TIMER" }, (response) => { });
     }
 
-    // -------------------------------------------------
-
+    /**
+     * Handles Dynamically Updating UI Timer Module
+     * 
+     * Accesses chrome.storage.local
+     */
     function InitiateUiTimer() {
         if (timerInterval) clearInterval(timerInterval);
 
@@ -158,8 +186,6 @@ export function init() {
 
                 const elapsed = Date.now() - data.StartingTime;
                 const remaining = Math.max(0, data.RemainingTime - elapsed);
-
-                //chrome.storage.local.set({ RemainingTime: remaining });
 
                 UpdateTimerDisplay(remaining);
 
@@ -173,6 +199,10 @@ export function init() {
         }, 1000);
     }
 
+    /**
+     * Translates ms Into Military Time
+     * @param {*} ms Milliseconds
+     */
     function UpdateTimerDisplay(ms) {
         const seconds = Math.floor((ms / 1000) % 60);
         const minutes = Math.floor((ms / 1000 / 60) % 60);
@@ -181,68 +211,5 @@ export function init() {
         document.getElementById("hours").value = String(hours).padStart(2, '0');
         document.getElementById("minutes").value = String(minutes).padStart(2, '0');
         document.getElementById("seconds").value = String(seconds).padStart(2, '0');
-    }
-
-
-
-    // -------------------------------------------------------------------
-
-
-
-    const input = document.getElementById("task-input");
-    const addBtn = document.getElementById("add-task");
-    const list = document.getElementById("task-list");
-
-    // Load saved tasks
-    chrome.storage.local.get(['tasks'], (result) => {
-        taskData = result.tasks || [];
-        render();
-    });
-
-    addBtn.addEventListener("click", () => {
-        const taskText = input.value.trim();
-        if (taskText === "") return;
-
-        taskData.push({ text: taskText });
-        input.value = "";
-        saveTasks();
-        render();
-    });
-
-    function render() {
-        list.innerHTML = "";
-
-        // render everything from storage
-        taskData.forEach((task, index) => {
-            const newTask = document.createElement("li");
-            newTask.className = "task-item";
-
-            const taskInput = document.createElement("input");
-            taskInput.type = "text";
-            taskInput.value = task.text;
-
-            taskInput.addEventListener("input", () => {
-                taskData[index].text = taskInput.value;
-                saveTasks();
-            });
-
-            const removeBtn = document.createElement("span");
-            removeBtn.className = "remove-task";
-            removeBtn.textContent = "✕";
-
-            removeBtn.addEventListener("click", () => {
-                taskData.splice(index, 1);
-                saveTasks();
-                render();
-            });
-
-            newTask.appendChild(removeBtn);
-            newTask.appendChild(taskInput);
-            list.appendChild(newTask);
-        });
-    }
-
-    function saveTasks() {
-        chrome.storage.local.set({ tasks: taskData });
     }
 }
