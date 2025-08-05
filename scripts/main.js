@@ -28,9 +28,10 @@ buttons.forEach(btn => {
 // default page on startup
 LoadPage(1);
 
+
 /*********************************************************************************************************************************************************************************************/
 
-async function LoadPage(pageNum) {
+export async function LoadPage(pageNum) {
     const { html: htmlArray, script: scriptArray } = PAGE_MAP[pageNum];
 
     // loop and retrive all html
@@ -54,3 +55,10 @@ async function LoadPage(pageNum) {
         }
     }
 }
+
+// This listener handles messages from the service worker
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === "LOAD_PAGE") {
+        LoadPage(request.page);
+    }
+});
