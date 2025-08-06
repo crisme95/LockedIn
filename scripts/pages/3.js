@@ -21,13 +21,15 @@ export async function displaySessionStats() {
     const productivePercentage = Math.round((stats.productiveTime / totalTime) * 100);
     const distractingPercentage = Math.round((stats.distractingTime / totalTime) * 100);
 
-    const sessionDuration = Math.round((stats.sessionEnd - stats.sessionStart) / 1000 / 60); // in minutes
-    
+    const sessionDurationInSeconds = Math.round((stats.sessionEnd - stats.sessionStart) / 1000);
+    const sessionMinutes = Math.floor(sessionDurationInSeconds / 60);
+    const sessionSeconds = sessionDurationInSeconds % 60;
+
 
     container.innerHTML = `
         
             <h2>Session Statistics</h2>
-            <p>Session Duration: ${sessionDuration} minutes</p>
+            <p>Session Duration: ${sessionMinutes} minutes and ${sessionSeconds} seconds</p>
             <div class="productivity-bar">
                 <div class="productive" style="width: ${productivePercentage}%">
                     ${productivePercentage}% Productive
