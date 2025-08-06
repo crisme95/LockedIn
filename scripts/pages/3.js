@@ -5,6 +5,7 @@ export function init() {
 export async function displaySessionStats() {
     const stats = await chrome.storage.local.get([
         'sessionStart',
+        'sessionEnd',
         'distractingTime',
         'productiveTime'
     ]);
@@ -20,7 +21,7 @@ export async function displaySessionStats() {
     const productivePercentage = Math.round((stats.productiveTime / totalTime) * 100);
     const distractingPercentage = Math.round((stats.distractingTime / totalTime) * 100);
 
-    const sessionDuration = Math.round((Date.now() - stats.sessionStart) / 1000 / 60); // in minutes
+    const sessionDuration = Math.round((stats.sessionEnd - stats.sessionStart) / 1000 / 60); // in minutes
     
 
     container.innerHTML = `

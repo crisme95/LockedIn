@@ -305,6 +305,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab) {
             await updateSessionStats(tab);
+            chrome.storage.local.set({ [STATS.SESSION_END]: Date.now() });
         }
 
         chrome.windows.create({
@@ -322,6 +323,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 // StatTrak -------------------------------
 const STATS = {
     SESSION_START: 'sessionStart',
+    SESSION_END: 'sessionEnd',
     DISTRACTING_TIME: 'distractingTime',
     PRODUCTIVE_TIME: 'productiveTime',
     LAST_ACTIVE_TIME: 'lastActiveTime',
@@ -331,6 +333,7 @@ const STATS = {
 function initializeSessionStats() {
     chrome.storage.local.set({
         [STATS.SESSION_START]: Date.now(),
+        [STATS.SESSION_END]: null,
         [STATS.DISTRACTING_TIME]: 0,
         [STATS.PRODUCTIVE_TIME]: 0,
         [STATS.LAST_ACTIVE_TIME]: Date.now(),
