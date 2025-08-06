@@ -40,8 +40,9 @@
 .task-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 5px;
     margin-bottom: 8px;
+    flex-wrap: wrap;
 }
 
 .task-item input[type="text"] {
@@ -55,4 +56,59 @@
     font-weight: bold;
     color: red;
     cursor: pointer;
+}
+
+.subtask-list {
+  flex-basis: 100%;
+  margin: 0 0 0 40px; 
+  list-style: none;
+  padding: 0;
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.subtask-item input[type="text"] {
+  flex: 1;
+  font-size: 14px;
+  padding: 4px;
+  border: 1px solid #ccc;
+}
+
+.remove-subtask {
+  font-weight: bold;
+  color: red;
+  cursor: pointer;
+}
+
+.subtask-input-bar {
+  display: flex;
+  gap: 2px;
+  margin: 2px 0 8px 40px;
+  flex-basis: 100%;
+  font-size: 12px;
+}
+
+.subtask-input-bar input {
+  flex: 1;
+  font-size: 12px;
+  padding: 2px 4px;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+}
+
+.subtask-input-bar button {
+  padding: 2px 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.subtask-input-bar,
+.subtask-list {
+  flex-basis: 100%;
+  margin-left: 20px;
 }
