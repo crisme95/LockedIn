@@ -18,7 +18,7 @@ function getLockedInState() {
     });
 }
 
-/* Create context menu items for marking "Productive" and "Distracting" tabs. */
+/* Create context menu items for marking "Productive" or "Distracting" tabs. */
 chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
         id: "markProductive",
@@ -242,6 +242,7 @@ async function checkTab(tab) {
 chrome.tabs.onActivated.addListener(activeInfo => {
     chrome.tabs.get(activeInfo.tabId, tab => {
         checkTab(tab);
+        updateSessionStats(tab);
     });
 });
 
@@ -250,6 +251,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     // Only check if the URL has changed to avoid redundant checks
     if (changeInfo.url) {
         checkTab(tab);
+        updateSessionStats(tab);
     }
 });
 
@@ -264,6 +266,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         chrome.storage.local.set({ StartingTime: Date.now() });
 
         console.log("created timer");
+        initializeSessionStats();
     }
     else if (message.type === "PAUSE_TIMER") {
         chrome.alarms.clear("LockedInSession");
@@ -295,9 +298,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
 });
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === "LockedInSession") {
         console.log("Lockdown timer ended!");
+        // Get the currently active tab to finalize stats
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab) {
+            await updateSessionStats(tab);
+            chrome.storage.local.set({ [STATS.SESSION_END]: Date.now() });
+        }
 
         chrome.windows.create({
             url: "../html/alert.html",
@@ -305,5 +314,66 @@ chrome.alarms.onAlarm.addListener((alarm) => {
             width: 865,
             height: 690
         });
+
+        // Send a message to the popup to load page 3
+        chrome.runtime.sendMessage({ type: "LOAD_PAGE", page: 3 });
     }
 });
+
+// StatTrak -------------------------------
+const STATS = {
+    SESSION_START: 'sessionStart',
+    SESSION_END: 'sessionEnd',
+    DISTRACTING_TIME: 'distractingTime',
+    PRODUCTIVE_TIME: 'productiveTime',
+    LAST_ACTIVE_TIME: 'lastActiveTime',
+    CURRENT_TAB: 'currentTab'
+};
+
+function initializeSessionStats() {
+    chrome.storage.local.set({
+        [STATS.SESSION_START]: Date.now(),
+        [STATS.SESSION_END]: null,
+        [STATS.DISTRACTING_TIME]: 0,
+        [STATS.PRODUCTIVE_TIME]: 0,
+        [STATS.LAST_ACTIVE_TIME]: Date.now(),
+        [STATS.CURRENT_TAB]: null
+    });
+}
+
+async function updateSessionStats(newTab) {
+    if (!newTab.url || !newTab.url.startsWith('http')) return;
+
+    const now = Date.now();
+    const stats = await chrome.storage.local.get([
+        STATS.LAST_ACTIVE_TIME,
+        STATS.CURRENT_TAB,
+        STATS.DISTRACTING_TIME,
+        STATS.PRODUCTIVE_TIME
+    ]);
+
+    // Calculate time spent on previous tab
+    if (stats.lastActiveTime && stats.currentTab) {
+        const timeSpent = now - stats.lastActiveTime;
+        const isDistracting = await isDomainDistracting(new URL(stats.currentTab).hostname);
+
+        const updatedStats = {
+            [STATS.LAST_ACTIVE_TIME]: now,
+            [STATS.CURRENT_TAB]: newTab.url
+        };
+
+        if (isDistracting) {
+            updatedStats[STATS.DISTRACTING_TIME] = (stats.distractingTime || 0) + timeSpent;
+        } else {
+            updatedStats[STATS.PRODUCTIVE_TIME] = (stats.productiveTime || 0) + timeSpent;
+        }
+
+        await chrome.storage.local.set(updatedStats);
+    } else {
+        // First tab of session
+        await chrome.storage.local.set({
+            [STATS.LAST_ACTIVE_TIME]: now,
+            [STATS.CURRENT_TAB]: newTab.url
+        });
+    }
+}
