@@ -10,6 +10,7 @@ const PRODUCTIVE = {
     COLOR: "green"
 }
 
+// Retrieve the current LockedInState from storage
 function getLockedInState() {
     return new Promise((resolve) => {
         chrome.storage.local.get({ LockedInState: 0 }, (data) => {
@@ -212,12 +213,14 @@ async function checkTab(tab) {
     console.log("Checking tab");
 
     if (!tab || !tab.id || !tab.url || !tab.url.startsWith('http')) {
+        console.log("Tab not valid for checking.");
         return;
     }
 
     const url = new URL(tab.url);
     const domain = url.hostname;
 
+    // Ignore extension pages
     if (url.protocol === 'chrome-extension:') {
         return;
     }
@@ -267,7 +270,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         console.log("created timer");
         initializeSessionStats();
-        chrome.action.setIcon({ path: '/assets/lock.png' });
+        chrome.action.setIcon({ path: '/assets/lock.png' }); // Change icon to locked
     }
     else if (message.type === "PAUSE_TIMER") {
         chrome.alarms.clear("LockedInSession");
@@ -276,7 +279,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             chrome.storage.local.set({ RemainingTime: (data.RemainingTime - elapsedTime) });
             // console.log(data.TotalTime - elapsedTime);
         });
-        chrome.action.setIcon({ path: '/assets/unlock.png' });
+        chrome.action.setIcon({ path: '/assets/unlock.png' }); // Change icon to unlocked
 
         console.log("Alarm \"Paused\"");
     }
@@ -287,7 +290,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             });
 
             chrome.storage.local.set({ StartingTime: Date.now() });
-            chrome.action.setIcon({ path: '/assets/lock.png' });
+            chrome.action.setIcon({ path: '/assets/lock.png' }); // Change icon to locked
         });
     }
     else if (message.type === "STOP_TIMER") {
@@ -296,7 +299,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             chrome.storage.local.set({ RemainingTime: (0) });
         });
 
-        chrome.action.setIcon({ path: '/assets/unlock.png' });
     }
 
     sendResponse();
@@ -306,6 +308,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === "LockedInSession") {
         console.log("Lockdown timer ended!");
+        chrome.action.setIcon({ path: '/assets/unlock.png' }); // Change icon to unlocked
+        chrome.storage.local.set({ LockedInState: 0 });
         // Get the currently active tab to finalize stats
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab) {
