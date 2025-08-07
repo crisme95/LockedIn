@@ -1,0 +1,16 @@
+#stats-container {
+    width: 380px;
+    background: #cbcbcb;
+    color: rgb(0, 0, 0);
+    padding: 10px;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+}
+
+#stats-title {
+    padding: 3px;
+    font-size: 100px;
+}
