@@ -302,8 +302,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
         chrome.windows.create({
             url: "../html/alert.html",
             type: "popup",
-            width: 400,
-            height: 200
+            width: 865,
+            height: 690
         });
     }
 });

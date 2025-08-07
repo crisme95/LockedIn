@@ -1,0 +1,32 @@
+body {
+    width: 800px;
+    height: 600px;
+    overflow: visible;
+    margin: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+#alert-body {
+    background: #eeeeee;
+    border: 5px solid #f5c6cb;
+    padding: 10px;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#alert-text {
+    font-size: 40px;
+    font-weight: bold;
+    text-align: center;
+}
+
+#alert-image {
+    width: 450px;
+    height: 450px;
+    object-fit: fill;
+    margin-top: 5px;
+}
