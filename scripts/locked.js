@@ -24,4 +24,13 @@ document.addEventListener('DOMContentLoaded', () => {
             pinInput.value = "";
         }
     });
+
+    setInterval(() => {
+        chrome.storage.local.get({ LockedInState: 0 }, async (data) => {
+            if (data.LockedInState != 1) {
+                window.location.href = targetUrl;
+            }   
+        });
+    }, 1000);
 });
+

@@ -10,6 +10,14 @@ const PRODUCTIVE = {
     COLOR: "green"
 }
 
+function getLockedInState() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get({ LockedInState: 0 }, (data) => {
+            resolve(data.LockedInState);
+        });
+    });
+}
+
 /* Create context menu items for marking "Productive" and "Distracting" tabs. */
 chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
@@ -25,8 +33,8 @@ chrome.runtime.onInstalled.addListener(() => {
     });
 
     chrome.alarms.create('periodicCheck', {
-        delayInMinutes: 1/60, // 1 second delay
-        periodInMinutes: 1/60 
+        delayInMinutes: 1 / 60, // 1 second delay
+        periodInMinutes: 1 / 60
     });
 });
 
@@ -197,6 +205,12 @@ function deleteTabFromDistracting(tab) {
  * @param {chrome.tabs.Tab} tab The tab object to check.
  */
 async function checkTab(tab) {
+    // Check if locked in session is active 
+    if (await getLockedInState() != 1) {
+        return;
+    }
+    console.log("Checking tab");
+
     if (!tab || !tab.id || !tab.url || !tab.url.startsWith('http')) {
         return;
     }
@@ -268,6 +282,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             });
 
             chrome.storage.local.set({ StartingTime: Date.now() });
+        });
+    }
+    else if (message.type === "STOP_TIMER") {
+        chrome.alarms.clear("LockedInSession");
+        chrome.storage.local.get(["StartingTime", "RemainingTime"], (data) => {
+            chrome.storage.local.set({ RemainingTime: (0) });
         });
     }
 

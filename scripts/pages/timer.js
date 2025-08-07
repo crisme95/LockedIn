@@ -66,12 +66,12 @@ export function init() {
                     });
 
                     InitiateUiTimer();
-                    chrome.storage.local.get(["StartingTime", "RemainingTime"], (data) => {
-                        const elapsed = Date.now() - data.StartingTime;
-                        const remaining = Math.max(0, data.RemainingTime - elapsed);
+                    // chrome.storage.local.get(["StartingTime", "RemainingTime"], (data) => {
+                    //     const elapsed = Date.now() - data.StartingTime;
+                    //     const remaining = Math.max(0, data.RemainingTime - elapsed);
 
-                        UpdateTimerDisplay(remaining);
-                    });
+                    //     UpdateTimerDisplay(remaining);
+                    // });
 
                     console.log("active menu");
                     break;
@@ -133,9 +133,25 @@ export function init() {
             chrome.storage.local.get(["TotalTime"], (data) => {
                 UpdateTimerDisplay(data.TotalTime);
             });
+            chrome.runtime.sendMessage({ type: "STOP_TIMER" }, (response) => { });
         }
         chrome.storage.local.get({ LockedInState: 0 }, Render);
     }
+
+    /**
+     * Function Handles PassKey Input Text Functionality, Sets LockedInState
+     * @param {*} data LockedInState :: {0:NeutralState, 1:InTimerState, 2:InBreakState}
+     */
+    function UpdatePassKeyBtnEnd(data) {
+        if (data.LockedInState > 0) {
+            chrome.storage.local.set({ LockedInState: 0 });
+            clearInterval(timerInterval);
+            chrome.storage.local.get(["TotalTime"], (data) => {
+                UpdateTimerDisplay(data.TotalTime);
+            });
+        }
+        chrome.storage.local.get({ LockedInState: 0 }, Render);
+    }   
 
     /**
      * Function Converts and Stores Input Time
@@ -193,7 +209,7 @@ export function init() {
                     clearInterval(timerInterval);
                     UpdateTimerDisplay(0);
 
-                    chrome.storage.local.get({ LockedInState: 0 }, UpdatePassKeyBtn);
+                    chrome.storage.local.get({ LockedInState: 0 }, UpdatePassKeyBtnEnd);
                 }
             });
         }, 1000);
@@ -204,7 +220,7 @@ export function init() {
      * @param {*} ms Milliseconds
      */
     function UpdateTimerDisplay(ms) {
-        const seconds = Math.floor((ms / 1000) % 60);
+        const seconds = Math.ceil((ms / 1000) % 60);
         const minutes = Math.floor((ms / 1000 / 60) % 60);
         const hours = Math.floor(ms / 1000 / 60 / 60);
 
