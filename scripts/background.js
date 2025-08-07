@@ -267,6 +267,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         console.log("created timer");
         initializeSessionStats();
+        chrome.action.setIcon({ path: '/assets/lock.png' });
     }
     else if (message.type === "PAUSE_TIMER") {
         chrome.alarms.clear("LockedInSession");
@@ -275,6 +276,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             chrome.storage.local.set({ RemainingTime: (data.RemainingTime - elapsedTime) });
             // console.log(data.TotalTime - elapsedTime);
         });
+        chrome.action.setIcon({ path: '/assets/unlock.png' });
 
         console.log("Alarm \"Paused\"");
     }
@@ -285,6 +287,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             });
 
             chrome.storage.local.set({ StartingTime: Date.now() });
+            chrome.action.setIcon({ path: '/assets/lock.png' });
         });
     }
     else if (message.type === "STOP_TIMER") {
@@ -292,6 +295,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         chrome.storage.local.get(["StartingTime", "RemainingTime"], (data) => {
             chrome.storage.local.set({ RemainingTime: (0) });
         });
+
+        chrome.action.setIcon({ path: '/assets/unlock.png' });
     }
 
     sendResponse();

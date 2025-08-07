@@ -5,7 +5,7 @@
     "manifest_version": 3,
     "action": {
         "default_popup": "html/main.html",
-        "default_icon": "assets/icon.png"
+        "default_icon": "assets/unlock.png"
     },
     "background": {
         "service_worker": "scripts/background.js",
