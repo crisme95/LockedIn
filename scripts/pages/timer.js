@@ -29,7 +29,7 @@ export function init() {
 
     /*********************************************************************************************************************************************************************************************/
 
-    /** 
+    /**
      * Function Handles Static UI Elements
      * @param {*} data LockedInState :: {0:NeutralState, 1:InTimerState, 2:InBreakState}
     */
@@ -47,7 +47,7 @@ export function init() {
                     });
 
                     chrome.storage.local.get(["TotalTime"], (data) => {
-                        UpdateTimerDisplay(data.TotalTime);
+                        UpdateTimerDisplay(data.TotalTime || 0);
                     });
 
                     console.log("start menu");
@@ -131,7 +131,7 @@ export function init() {
             chrome.storage.local.set({ LockedInState: 0 });
             clearInterval(timerInterval);
             chrome.storage.local.get(["TotalTime"], (data) => {
-                UpdateTimerDisplay(data.TotalTime);
+                UpdateTimerDisplay(data.TotalTime || 0);
             });
             chrome.runtime.sendMessage({ type: "STOP_TIMER" }, (response) => { });
         }
@@ -147,15 +147,15 @@ export function init() {
             chrome.storage.local.set({ LockedInState: 0 });
             clearInterval(timerInterval);
             chrome.storage.local.get(["TotalTime"], (data) => {
-                UpdateTimerDisplay(data.TotalTime);
+                UpdateTimerDisplay(data.TotalTime || 0);
             });
         }
         chrome.storage.local.get({ LockedInState: 0 }, Render);
-    }   
+    }
 
     /**
      * Function Converts and Stores Input Time
-     * 
+     *
      * Notifies background.js With Message START_TIMER
      */
     function StartTimer() {
@@ -190,7 +190,7 @@ export function init() {
 
     /**
      * Handles Dynamically Updating UI Timer Module
-     * 
+     *
      * Accesses chrome.storage.local
      */
     function InitiateUiTimer() {
