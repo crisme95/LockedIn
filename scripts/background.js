@@ -310,6 +310,18 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         console.log("Lockdown timer ended!");
         chrome.action.setIcon({ path: '/assets/unlock.png' }); // Change icon to unlocked
         chrome.storage.local.set({ LockedInState: 0 });
+
+        // Clear all session-unlocked domains
+        const sessionData = await chrome.storage.session.get(null);
+        const keysToRemove = [];
+        for (const key in sessionData) {
+            if (key.startsWith('unlocked_')) {
+                keysToRemove.push(key);
+            }
+        }
+        await chrome.storage.session.remove(keysToRemove);
+        console.log("Cleared all session-unlocked domains.");
+
         // Get the currently active tab to finalize stats
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab) {
