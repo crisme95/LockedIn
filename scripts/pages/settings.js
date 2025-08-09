@@ -32,7 +32,7 @@ function displayAndDeleteDistractingDomains() {
 
             li.appendChild(domainText);
             li.appendChild(deleteBtn);
-            ul.appendChild(li);
+ul.appendChild(li);
         });
 
         container.appendChild(ul);
@@ -59,6 +59,54 @@ function deleteDomain(domainToDelete) {
         });
     });
 }
+
+/**
+ * Adds a new domain to the distracting domains list from manual input.
+ */
+function addDomainManually() {
+    const input = document.getElementById('manual-domain-input');
+    const message = document.getElementById('manual-add-message');
+    let domain = input.value.trim();
+
+    if (!domain) {
+        message.textContent = "Please enter a domain.";
+        message.style.color = 'red';
+        return;
+    }
+
+    // If a full URL is pasted, extract the hostname
+    try {
+        if (!domain.startsWith('http://') && !domain.startsWith('https://')) {
+            domain = 'http://' + domain;
+        }
+        const url = new URL(domain);
+        domain = url.hostname;
+    } catch (error) {
+        message.textContent = "Invalid domain or URL format.";
+        message.style.color = 'red';
+        return;
+    }
+
+
+    const storageKey = "distractingDomains";
+    chrome.storage.sync.get([storageKey], (result) => {
+        const domains = result[storageKey] || [];
+        if (domains.includes(domain)) {
+            message.textContent = "This domain is already in the list.";
+            message.style.color = 'orange';
+        } else {
+            domains.push(domain);
+            domains.sort();
+            chrome.storage.sync.set({ [storageKey]: domains }, () => {
+                message.textContent = `Successfully blocked ${domain}.`;
+                message.style.color = 'green';
+                displayAndDeleteDistractingDomains(); // Refresh the list
+            });
+        }
+        input.value = ""; // Clear input field
+    });
+}
+
 
 /**
  * The init function that is called by main.js when this page is loaded.
@@ -96,4 +144,8 @@ export function init() {
             pinConfirm.value = "";
         });
     });
+
+    // Set up the manual domain adding functionality
+    const addDomainBtn = document.getElementById('add-domain-btn');
+    addDomainBtn.addEventListener('click', addDomainManually);
 }
