@@ -8,8 +8,8 @@
 const PAGE_MAP = {
     1: { html: ["../html/pages/timer.html", "../html/pages/task.html"], script: ["scripts/pages/timer.js", "scripts/pages/task.js"] },
     2: { html: ["../html/pages/task.html"], script: ["scripts/pages/task.js"] },
-    3: { html: ["../html/pages/3.html"], script: ["scripts/pages/3.js"] },
-    4: { html: ["../html/pages/4.html"], script: ["scripts/pages/4.js"] }
+    3: { html: ["../html/pages/statTrak.html"], script: ["scripts/pages/statTrak.js"] },
+    4: { html: ["../html/pages/settings.html"], script: ["scripts/pages/settings.js"] }
 };
 
 // retrieve html elements by id
