@@ -10,30 +10,99 @@
     flex-direction: column;
     justify-content: center;
     align-items: stretch;
+} */
+
+h2 {
+    text-align: center;
+    color: #333;
+    font-size: 20px;
+    margin-top: 20px;
+    margin-bottom: 5px;
 }
- */
+
+p {
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+
 #distracting-domains-container ul {
   list-style: none;
   padding: 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  max-height: 150px;
+  overflow-y: auto;
 }
 
 #distracting-domains-container li {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px;
+  padding: 12px;
   border-bottom: 1px solid #eee;
+}
+
+#distracting-domains-container li:last-child {
+  border-bottom: none;
 }
 
 #distracting-domains-container .delete-btn {
   background-color: #ff4d4d;
   color: white;
   border: none;
-  padding: 5px 10px;
+  padding: 8px 12px;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 #distracting-domains-container .delete-btn:hover {
   background-color: #cc0000;
+}
+
+#manual-add-container,
+#pin-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+#manual-domain-input,
+#pin-container input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#add-domain-btn,
+#pin-container button {
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#add-domain-btn:hover,
+#pin-container button:hover {
+    background-color: #0056b3;
+}
+
+#manual-add-message,
+#pin-message {
+    text-align: center;
+    font-weight: bold;
+    font-size: 14px;
+    margin-top: 5px;
+    min-height: 20px;
 }
