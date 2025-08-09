@@ -342,6 +342,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 // StatTrak -------------------------------
+// Constants for session statistics keys
 const STATS = {
     SESSION_START: 'sessionStart',
     SESSION_END: 'sessionEnd',

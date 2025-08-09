@@ -1,3 +1,8 @@
+/*
+    locked.js
+    This script handles the PIN entry for unlocking distracting sites.
+*/
+
 document.addEventListener('DOMContentLoaded', () => {
     const pinInput = document.getElementById('pin-input');
     const unlockBtn = document.getElementById('unlock-btn');
