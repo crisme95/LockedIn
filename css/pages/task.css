@@ -1,19 +1,4 @@
-#task-container {
-    width: 380px;
-    background: #cbcbcb;
-    color: rgb(0, 0, 0);
-    padding: 10px;
-    font-family: sans-serif;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: stretch;
-}
-
-#task-title {
-    padding: 3px;
-    font-size: 30px;
-}
+/* task.css */
 
 #task-input-bar {
     display: flex;
@@ -23,13 +8,24 @@
 
 #task-input {
     flex: 1;
-    padding: 6px;
+    padding: 8px;
     font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
 #add-task {
-    padding: 6px 12px;
+    padding: 8px 16px;
     font-size: 18px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#add-task:hover {
+    background-color: #0056b3;
 }
 
 #task-list {
@@ -60,7 +56,7 @@
 
 .subtask-list {
   flex-basis: 100%;
-  margin: 0 0 0 40px; 
+  margin: 0 0 0 40px;
   list-style: none;
   padding: 0;
 }
