@@ -38,7 +38,7 @@ To get started with the "Locked-In" extension, you'll need to load it into a Chr
     - Select the `Locked-In` folder and click **Select Folder**.
 
 5. **Ready to Go!**  
-    - The extension should now appear in your extensions list and its icon will be added to your browser's toolbar.
+    - The extension should now appear in your extensions list and its icon will be added to your browser's toolbar. You can pin the extension to the toolbar for easier access.
 
 ---
 
@@ -57,7 +57,7 @@ Click the extension's icon in your toolbar to open the main popup window. The in
 
 ---
 
-### The Timer: Your Focus Hub
+### Timer
 
 - **Set the Timer:**  
   Choose your session duration using the hours, minutes, and seconds fields.
@@ -72,7 +72,7 @@ Click the extension's icon in your toolbar to open the main popup window. The in
 
 ---
 
-### Task Manager: Organize Your Work
+### Task Manager
 
 - **Add Tasks:**  
   Type a new task and click **+** to add it.
@@ -85,7 +85,7 @@ Click the extension's icon in your toolbar to open the main popup window. The in
 
 ---
 
-### StatTrak: Review Your Performance
+### StatTrak
 
 - **Productivity Breakdown:**  
   See time spent on productive vs. distracting sites.
@@ -98,7 +98,7 @@ Click the extension's icon in your toolbar to open the main popup window. The in
 
 ---
 
-### Settings: Customize Your Experience
+### Settings
 
 - **Manage Distracting Sites:**  
   - **Manual Blocking:** Add sites by URL.
@@ -117,8 +117,3 @@ Click the extension's icon in your toolbar to open the main popup window. The in
 
 - **Unlocking a Tab:**  
   Enter your PIN to gain temporary access to the site.
-
----
-
-We hope this guide helps you make the most of the **Locked-In** extension.  
-**Happy focusing!**
