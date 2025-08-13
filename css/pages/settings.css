@@ -53,7 +53,8 @@ p {
 }
 
 #manual-add-container,
-#pin-container {
+#pin-container,
+#import-container {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -64,14 +65,16 @@ p {
 }
 
 #manual-domain-input,
-#pin-container input {
+#pin-container input,
+#import-container input[type="file"] {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
 }
 
 #add-domain-btn,
-#pin-container button {
+#pin-container button,
+#import-container button {
     padding: 10px;
     background-color: #007bff;
     color: white;
@@ -82,12 +85,14 @@ p {
 }
 
 #add-domain-btn:hover,
-#pin-container button:hover {
+#pin-container button:hover,
+#import-container button:hover {
     background-color: #0056b3;
 }
 
 #manual-add-message,
-#pin-message {
+#pin-message,
+#import-message {
     text-align: center;
     font-weight: bold;
     font-size: 14px;
