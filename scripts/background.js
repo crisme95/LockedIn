@@ -232,12 +232,14 @@ async function checkTab(tab) {
         return;
     }
 
+    // Check if the tab was unlocked during the session
     const sessionKey = `unlocked_${domain}`;
     const sessionResult = await chrome.storage.session.get([sessionKey]);
     if (sessionResult[sessionKey]) {
         return;
     }
 
+    // If all checks pass, lock the tab by redirecting the user to the locked page
     const lockedUrl = chrome.runtime.getURL("html/locked.html");
     const redirectUrl = `${lockedUrl}?url=${encodeURIComponent(tab.url)}`;
     chrome.tabs.update(tab.id, {
