@@ -205,6 +205,20 @@ async function checkTab(tab) {
         return;
     }
 
+    // If the tab is in a group, check if it's the "Productive" group
+    if (tab.groupId) {
+        try {
+            const tabGroup = await chrome.tabGroups.get(tab.groupId);
+            if (tabGroup.title === PRODUCTIVE.TITLE) {
+                // If the tab is in the "Productive" group, do not lock it.
+                return;
+            }
+        } catch (error) {
+            console.error("Could not get tab group info:", error);
+        }
+    }
+
+
     const url = new URL(tab.url);
     const domain = url.hostname;
 
