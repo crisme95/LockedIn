@@ -40,7 +40,9 @@ export function init() {
                     startBtn.textContent = "Start";
                     startBtn.style.backgroundColor = "#34da92";
 
-                    passKey.value = "";
+                    chrome.storage.local.get(["unlockPin"], (data) => {
+                        passKey.value = data.unlockPin || "";
+                    });
 
                     document.querySelectorAll("#timer input").forEach(input => {
                         input.readOnly = false;
@@ -159,6 +161,8 @@ export function init() {
      * Notifies background.js With Message START_TIMER
      */
     function StartTimer() {
+        chrome.storage.local.set({ unlockPin: passKey.value });
+
         const totalTime = ((parseInt(hours.value * 3600) || 0) + (parseInt(minutes.value * 60) || 0) + (parseInt(seconds.value) || 0)) * 1000;
         chrome.storage.local.set({ TotalTime: totalTime });
         chrome.storage.local.set({ RemainingTime: totalTime });
