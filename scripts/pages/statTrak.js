@@ -1,8 +1,15 @@
+/**
+ * The init function that is called by main.js when this page is loaded.
+ */
 export function init() {
     displaySessionStats();
 }
 
+/**
+ * Gets and displays the statTrak tracked metrics.
+ */
 export async function displaySessionStats() {
+    // Get stat from storage
     const stats = await chrome.storage.local.get([
         'sessionStart',
         'sessionEnd',
@@ -18,6 +25,7 @@ export async function displaySessionStats() {
         return;
     }
 
+    // Represents time working and time distracted as percentages of total time
     const productivePercentage = Math.round((stats.productiveTime / totalTime) * 100);
     const distractingPercentage = Math.round((stats.distractingTime / totalTime) * 100);
 
@@ -26,6 +34,7 @@ export async function displaySessionStats() {
     const sessionSeconds = sessionDurationInSeconds % 60;
 
 
+    // HTML container specifications
     container.innerHTML = `
         
             <h2>Session Statistics</h2>
