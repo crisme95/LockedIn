@@ -1,15 +1,29 @@
 /**
- * The init function that is called by main.js when this page is loaded.
+ * StatTrak module for tracking and displaying productivity metrics.
+ * Shows how users spend their time during a Locked-In session by comparing
+ * productive vs distracting time usage. Future improvements could include
+ * more granular tracking, additional visualizations, or weekly reports.
+ */
+
+/**
+ * Entry point for the StatTrak page.
+ * Called by main.js when this page is loaded.
  */
 export function init() {
     displaySessionStats();
 }
 
 /**
- * Gets and displays the statTrak tracked metrics.
+ * Retrieves session statistics from storage and renders them in a visual format.
+ * Displays:
+ * - Total session duration
+ * - Productivity percentage with visual bar
+ * - Time breakdown between productive and distracting activities
+ * 
+ * If no statistics are available (totalTime = 0), displays a placeholder message.
  */
 export async function displaySessionStats() {
-    // Get stat from storage
+    // Get stats from storage
     const stats = await chrome.storage.local.get([
         'sessionStart',
         'sessionEnd',
@@ -25,16 +39,16 @@ export async function displaySessionStats() {
         return;
     }
 
-    // Represents time working and time distracted as percentages of total time
+    // Calculate productivity metrics as percentages
     const productivePercentage = Math.round((stats.productiveTime / totalTime) * 100);
     const distractingPercentage = Math.round((stats.distractingTime / totalTime) * 100);
 
+    // Convert session duration from milliseconds to minutes and seconds
     const sessionDurationInSeconds = Math.round((stats.sessionEnd - stats.sessionStart) / 1000);
     const sessionMinutes = Math.floor(sessionDurationInSeconds / 60);
     const sessionSeconds = sessionDurationInSeconds % 60;
 
-
-    // HTML container specifications
+    // Render the statistics with a visual productivity bar
     container.innerHTML = `
         
             <h2>Session Statistics</h2>
