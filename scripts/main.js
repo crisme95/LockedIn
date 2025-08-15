@@ -1,10 +1,15 @@
 /**
- * @main Runs On StartUp of Extension, Functions as the Container to All HTML and JS Scripts
+ * Main extension controller that manages page loading and navigation.
+ * Handles dynamic content loading and script initialization for different views.
+ * Pages are loaded based on user navigation or system events.
  */
 
-
-
-// dictionary with hardcoded reference to html and corresponding scripts
+/**
+ * Page configuration map
+ * Key: page number
+ * Value: object containing arrays of HTML files and their corresponding JavaScript modules
+ * Multiple HTML/JS files can be loaded for a single page (e.g., timer + task view)
+ */
 const PAGE_MAP = {
     1: { html: ["../html/pages/timer.html", "../html/pages/task.html"], script: ["scripts/pages/timer.js", "scripts/pages/task.js"] },
     2: { html: ["../html/pages/task.html"], script: ["scripts/pages/task.js"] },
@@ -12,11 +17,11 @@ const PAGE_MAP = {
     4: { html: ["../html/pages/settings.html"], script: ["scripts/pages/settings.js"] }
 };
 
-// retrieve html elements by id
+// Initialize DOM references
 const contentContainer = document.getElementById("content");
 const buttons = document.querySelectorAll("#page-buttons button");
 
-// assign button functionality
+// Set up navigation event handlers
 buttons.forEach(btn => {
     btn.addEventListener("click", () => {
         const page = btn.id;
@@ -25,18 +30,23 @@ buttons.forEach(btn => {
     });
 });
 
-// default page on startup
+// Load the default view (timer + task page)
 LoadPage(1);
 
-
-/*********************************************************************************************************************************************************************************************/
-
+/**
+ * Loads and initializes a page based on its number.
+ * 1. Clears current content
+ * 2. Loads all HTML files for the page
+ * 3. Initializes associated JavaScript modules
+ * 
+ * @param {number} pageNum - The page number to load from PAGE_MAP
+ */
 export async function LoadPage(pageNum) {
     const { html: htmlArray, script: scriptArray } = PAGE_MAP[pageNum];
 
-    // loop and retrive all html
-    const htmlPaths = Array.isArray(htmlArray) ? htmlArray : [htmlArray]; // error checking
-    contentContainer.innerHTML = ""; // clear html content
+    // Load HTML content
+    const htmlPaths = Array.isArray(htmlArray) ? htmlArray : [htmlArray];
+    contentContainer.innerHTML = "";
     for (const htmlPath of htmlPaths) {
         const html = await fetch(chrome.runtime.getURL(htmlPath)).then(res => res.text());
         const tempDiv = document.createElement("div");
@@ -46,17 +56,20 @@ export async function LoadPage(pageNum) {
         }
     }
 
-    // loop and run all page scripts
-    const scriptPaths = Array.isArray(scriptArray) ? scriptArray : [scriptArray]; // error checking
+    // Initialize associated JavaScript modules
+    const scriptPaths = Array.isArray(scriptArray) ? scriptArray : [scriptArray];
     for (const scriptPath of scriptPaths) {
         const module = await import(chrome.runtime.getURL(scriptPath));
-        if (module && typeof module.init === "function") { // error checking
-            module.init(); // call init() from scripts
+        if (module && typeof module.init === "function") {
+            module.init();
         }
     }
 }
 
-// This listener handles messages from the service worker
+/**
+ * Message handler for service worker communications
+ * Supports remote page loading through LOAD_PAGE events
+ */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === "LOAD_PAGE") {
         LoadPage(request.page);
