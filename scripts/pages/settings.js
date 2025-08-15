@@ -1,6 +1,11 @@
 /**
- * Fetches distracting domains from storage and displays them in a list.
- * Each item in the list has a delete button.
+ * Settings page handler for the Locked-In extension.
+ * Manages distracting domains list, PIN settings, and domain import functionality.
+ */
+
+/**
+ * Fetches distracting domains from storage and creates an interactive list view.
+ * Each domain entry includes a delete button for easy removal.
  */
 function displayAndDeleteDistractingDomains() {
     const container = document.getElementById('distracting-domains-container');
@@ -40,8 +45,7 @@ function displayAndDeleteDistractingDomains() {
 }
 
 /**
- * Deletes a specific domain from the distracting domains list in storage,
- * and then re-renders the list.
+ * Removes a domain from the blocked list and updates storage.
  * @param {string} domainToDelete The domain to remove.
  */
 function deleteDomain(domainToDelete) {
@@ -61,7 +65,9 @@ function deleteDomain(domainToDelete) {
 }
 
 /**
- * Adds a new domain to the distracting domains list from manual input.
+ * Adds a new domain to the blocked list via manual input.
+ * Handles both direct domain entries and full URLs, extracting the hostname.
+ * Includes input validation and duplicate checking.
  */
 function addDomainManually() {
     const input = document.getElementById('manual-domain-input');
@@ -108,7 +114,13 @@ function addDomainManually() {
 }
 
 /**
- * Imports distracting domains from a user-selected CSV file.
+ * Processes a CSV file containing domains to be imported.
+ * Features:
+ * - Validates file format (.csv only)
+ * - Cleans and validates each domain
+ * - Handles both direct domains and full URLs
+ * - Prevents duplicates
+ * - Provides feedback on import results
  */
 function importDomainsFromFile() {
     const fileInput = document.getElementById('import-file-input');
@@ -191,7 +203,13 @@ function importDomainsFromFile() {
 
 
 /**
- * The init function that is called by main.js when this page is loaded.
+ * Initializes the settings page with:
+ * - Current list of blocked domains
+ * - PIN management system
+ * - Domain input handlers
+ * - File import functionality
+ * 
+ * This is the main entry point called by main.js when loading the settings page.
  */
 export function init() {
     // Initial call to display the domains when the page loads
