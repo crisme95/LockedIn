@@ -2,8 +2,6 @@
  * @timer Runs User Interaction Logic Related to the Timer and Handles UI Visuals
  */
 
-
-
 // temporary timer for visual updates
 let timerInterval = null;
 
