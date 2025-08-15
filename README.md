@@ -24,7 +24,7 @@ To get started with the "Locked-In" extension, you'll need to load it into a Chr
 ### Steps:
 
 1. **Download the Files:**  
-    Ensure you have the entire `Locked-In` folder, including `manifest.json`, HTML, CSS, and scripts, saved on your computer.
+    Clone the repo onto your computer. Ensure you have the entire `Locked-In` folder, including `manifest.json`, HTML, CSS, and scripts, saved on your computer.
 
 2. **Open Browser Extensions:**  
     - In Chrome: Go to `chrome://extensions`  
