@@ -59,3 +59,37 @@
 #content {
   display: block;
 }
+
+#timer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.timer-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    color: white;
+    min-width: 80px;
+}
+
+#start-btn {
+    background-color: #28a745; /* Green */
+}
+
+#pause-btn {
+    background-color: #ffc107; /* Yellow */
+}
+
+#stop-btn {
+    background-color: #dc3545; /* Red */
+}
+
+.timer-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
