@@ -64,16 +64,19 @@ function updateButtonStates(state) {
             startPauseBtn.textContent = "Start";
             startPauseBtn.disabled = false;
             stopBtn.style.display = "none";
-            startPauseBtn.classList.remove("paused");
+            startPauseBtn.classList.remove("running");
+            startPauseBtn.classList.add("paused");
         } else if (state === 1) { // Running
             startPauseBtn.textContent = "Pause";
             startPauseBtn.disabled = false;
             stopBtn.style.display = "inline-block";
+            startPauseBtn.classList.add("running");
             startPauseBtn.classList.remove("paused");
         } else if (state === 2) { // Paused
             startPauseBtn.textContent = "Start";
             startPauseBtn.disabled = false;
             stopBtn.style.display = "inline-block";
+            startPauseBtn.classList.remove("running");
             startPauseBtn.classList.add("paused");
         }
 

@@ -65,12 +65,17 @@
     min-width: 80px;
 }
 
+
 #start-pause-btn {
-    background-color: #28a745; /* Green */
+    background-color: green; /* Initial color for Start */
+}
+
+#start-pause-btn.running {
+    background-color: orange;
 }
 
 #start-pause-btn.paused {
-    background-color: orange;
+    background-color: green;
 }
 
 #stop-btn {
