@@ -1,28 +1,13 @@
+// scripts/background.js
+
 // Tab Manager -------------------------------------------
-/* Create group constants for grouping tabs as "Productive" or "Distracting". */
-const DISTRACTING = {
-    COLOR: "red",
-    TITLE: "Distracting"
-};
+const DISTRACTING = { COLOR: "red", TITLE: "Distracting" };
+const PRODUCTIVE = { COLOR: "green", TITLE: "Productive" };
 
-const PRODUCTIVE = {
-    COLOR: "green",
-    TITLE: "Productive"
-};
+let timerInterval;
 
-// Retrieve the current LockedInState from storage
-function getLockedInState() {
-    return new Promise(function (resolve) {
-        chrome.storage.local.get({
-            LockedInState: 0
-        }, function (data) {
-            resolve(data.LockedInState);
-        });
-    });
-}
-
-/* Create context menu items for marking "Productive" or "Distracting" tabs. */
-chrome.runtime.onInstalled.addListener(function () {
+/* Create context menu items for marking tabs. */
+chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
         contexts: ["all"],
         id: "markProductive",
@@ -35,395 +20,132 @@ chrome.runtime.onInstalled.addListener(function () {
         title: `Mark as ${DISTRACTING.TITLE}`
     });
 
-    chrome.alarms.create("periodicCheck", {
-        delayInMinutes: 1 / 60, // 1 second delay
-        periodInMinutes: 1 / 60
-    });
+    // TODO: This periodic check is resource-intensive. Carry out testing to see if it's absolutely necessary.
+    chrome.alarms.create("periodicCheck", { periodInMinutes: 1 / 60 });
 });
 
-// Listen for the alarm and check all tabs
-chrome.alarms.onAlarm.addListener(function (alarm) {
-    if (alarm.name === "periodicCheck") {
-        chrome.tabs.query({}, function (tabs) {
-            tabs.forEach(function (tab) {
-                checkTab(tab);
-            });
-        });
-    }
-});
-
-
-/* Handle context menu clicks to mark tabs as "Productive" or "Distracting". */
-chrome.contextMenus.onClicked.addListener(async function (info, tab) {
-    // A tab might be closed between the right-click and the menu selection.
+/* Handle context menu clicks. */
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     try {
         await chrome.tabs.get(tab.id);
-        if (info.menuItemId === "markProductive") {
-            await groupTab(tab, true);
-        } else if (info.menuItemId === "markDistracting") {
-            await groupTab(tab, false);
-        }
+        if (info.menuItemId === "markProductive") await groupTab(tab, true);
+        else if (info.menuItemId === "markDistracting") await groupTab(tab, false);
     } catch (error) {
-        console.log(
-            "Tab not found, likely closed before action could complete."
-        );
+        console.log("Tab not found, likely closed.");
     }
 });
 
-/* Function to group a tab as either "Productive" or "Distracting". */
+/* Group a tab as "Productive" or "Distracting". */
 async function groupTab(tab, isProductive) {
-    const groupInfo = (
-        isProductive
-            ? PRODUCTIVE
-            : DISTRACTING
-    );
-    const groupTitle = groupInfo.TITLE;
-    const groupColor = groupInfo.COLOR;
-
+    const groupInfo = isProductive ? PRODUCTIVE : DISTRACTING;
     try {
-        const existingGroups = await chrome.tabGroups.query({
-            title: groupTitle,
+        const [existingGroup] = await chrome.tabGroups.query({
+            title: groupInfo.TITLE,
             windowId: tab.windowId
         });
-
-        let groupId;
-        if (existingGroups.length > 0) {
-            groupId = existingGroups[0].id;
-        } else {
-            const newGroupId = await chrome.tabs.group({
-                tabIds: [tab.id]
-            });
-            await chrome.tabGroups.update(newGroupId, {
-                color: groupColor,
-                title: groupTitle
-            });
-            groupId = newGroupId;
+        const groupId = existingGroup ? existingGroup.id : await chrome.tabs.group({ tabIds: [tab.id] });
+        if (!existingGroup) {
+            await chrome.tabGroups.update(groupId, { color: groupInfo.COLOR, title: groupInfo.TITLE });
         }
-
-        await chrome.tabs.group({
-            groupId: groupId,
-            tabIds: [tab.id]
-        });
-
-        // If distracting, save its domain and tab info.
-        if (!isProductive) {
-            saveDomainAsDistracting(tab.url);
-            saveTabAsDistracting(tab);
-        }
-
+        await chrome.tabs.group({ groupId, tabIds: [tab.id] });
+        if (!isProductive) saveDomainAsDistracting(tab.url);
     } catch (error) {
         console.error("Error grouping tab:", error);
     }
 }
 
-/**
- * Saves the distracting tab's domain to chrome.storage.sync.
- * @param {string} urlString The URL of the tab.
- */
 function saveDomainAsDistracting(urlString) {
-    if (!urlString || !urlString.startsWith("http")) {
-        return;
-    }
-    const url = new URL(urlString);
-    const domain = url.hostname;
-    const storageKey = "distractingDomains";
-
-    chrome.storage.sync.get([storageKey], function (result) {
-        const domains = result[storageKey] || [];
-        if (!domains.includes(domain)) {
-            domains.push(domain);
-            domains.sort();
-            const dataToSet = {};
-            dataToSet[storageKey] = domains;
-            chrome.storage.sync.set(dataToSet, function () {
-                console.log(`Saved ${domain} to distracting domains list.`);
-            });
+    if (!urlString || !urlString.startsWith("http")) return;
+    const domain = new URL(urlString).hostname;
+    chrome.storage.sync.get({ distractingDomains: [] }, ({ distractingDomains }) => {
+        if (!distractingDomains.includes(domain)) {
+            distractingDomains.push(domain);
+            distractingDomains.sort();
+            chrome.storage.sync.set({ distractingDomains });
         }
     });
 }
 
-/**
- * Checks if a domain is in the distracting domains list.
- * @param {string} domain The domain to check.
- * @returns {Promise<boolean>} True if the domain is distracting.
- */
-function isDomainDistracting(domain) {
-    const storageKey = "distractingDomains";
-    return new Promise(function (resolve) {
-        chrome.storage.sync.get([storageKey], function (result) {
-            const domains = result[storageKey] || [];
-            resolve(domains.includes(domain));
-        });
-    });
+async function isDomainDistracting(domain) {
+    const { distractingDomains = [] } = await chrome.storage.sync.get("distractingDomains");
+    return distractingDomains.includes(domain);
 }
 
-/**
- * Saves the distracting tab's URL and Title to chrome.storage.sync.
- * @param {chrome.tabs.Tab} tab The tab object to save.
- */
-function saveTabAsDistracting(tab) {
-    if (!tab.url || !tab.url.startsWith("http")) {
-        return;
-    }
-
-    const storageKey = "distractingTabs";
-    const newTabInfo = {
-        title: tab.title,
-        url: tab.url
-    };
-
-    chrome.storage.sync.get([storageKey], function (result) {
-        const tabs = result[storageKey] || [];
-        const isAlreadySaved = tabs.some(function (savedTab) {
-            return savedTab.url === newTabInfo.url;
-        });
-
-        if (!isAlreadySaved) {
-            tabs.push(newTabInfo);
-            const dataToSet = {};
-            dataToSet[storageKey] = tabs;
-            chrome.storage.sync.set(dataToSet, function () {
-                console.log(`Saved ${newTabInfo.url} to distracting tabs.`);
-            });
-        }
-    });
-}
-
-/**
- * Checks if a tab is distracting and takes appropriate action.
- * @param {chrome.tabs.Tab} tab The tab object to check.
- */
 async function checkTab(tab) {
-    // Check if locked in session is active
-    if (await getLockedInState() !== 1) {
-        return;
-    }
-    console.log("Checking tab");
+    const { lockedInState } = await chrome.storage.local.get({ lockedInState: 0 });
+    if (lockedInState !== 1 || !tab || !tab.id || !tab.url || !tab.url.startsWith("http")) return;
 
-    if (!tab || !tab.id || !tab.url || !tab.url.startsWith("http")) {
-        console.log("Tab not valid for checking.");
-        return;
-    }
-
-    // If the tab is in a group, check if it's the "Productive" group
     if (tab.groupId) {
         try {
             const tabGroup = await chrome.tabGroups.get(tab.groupId);
-            if (tabGroup.title === PRODUCTIVE.TITLE) {
-                // If the tab is in the "Productive" group, do not lock it.
-                return;
-            }
-        } catch (error) {
-            console.error("Could not get tab group info:", error);
-        }
+            if (tabGroup.title === PRODUCTIVE.TITLE) return;
+        } catch (error) { /* Ignore error if group not found */ }
     }
-
 
     const url = new URL(tab.url);
+    if (url.protocol === "chrome-extension:") return;
+
     const domain = url.hostname;
-
-    // Ignore extension pages
-    if (url.protocol === "chrome-extension:") {
-        return;
+    if (await isDomainDistracting(domain)) {
+        const { [`unlocked_${domain}`]: isUnlocked } = await chrome.storage.session.get(`unlocked_${domain}`);
+        if (!isUnlocked) {
+            const lockedUrl = chrome.runtime.getURL("html/locked.html");
+            chrome.tabs.update(tab.id, { url: `${lockedUrl}?url=${encodeURIComponent(tab.url)}` });
+        }
     }
-
-    const isDistracting = await isDomainDistracting(domain);
-    if (!isDistracting) {
-        return;
-    }
-
-    // Check if the tab was unlocked during the session
-    const sessionKey = `unlocked_${domain}`;
-    const sessionResult = await chrome.storage.session.get([sessionKey]);
-    if (sessionResult[sessionKey]) {
-        return;
-    }
-
-    // If all checks pass, lock the tab by redirecting the user to the locked page
-    const lockedUrl = chrome.runtime.getURL("html/locked.html");
-    const redirectUrl = `${lockedUrl}?url=${encodeURIComponent(tab.url)}`;
-    chrome.tabs.update(tab.id, {
-        url: redirectUrl
-    });
 }
 
-// Event listener for when a user switches to a different tab
-chrome.tabs.onActivated.addListener(function (activeInfo) {
-    chrome.tabs.get(activeInfo.tabId, function (tab) {
-        checkTab(tab);
-        updateSessionStats(tab);
-    });
+// Event listeners for tab checks
+chrome.tabs.onActivated.addListener(({ tabId }) => chrome.tabs.get(tabId, checkTab));
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.url) checkTab(tab);
 });
-
-// Event listener for when a tab's URL changes
-chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-    // Only check if the URL has changed to avoid redundant checks
-    if (changeInfo.url) {
-        checkTab(tab);
-        updateSessionStats(tab);
+chrome.alarms.onAlarm.addListener(alarm => {
+    if (alarm.name === "periodicCheck") {
+        chrome.tabs.query({}, tabs => tabs.forEach(checkTab));
     }
 });
 
+// Timer Logic -------------------------------------------
 
-// Timer -------------------------------
-
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "START_TIMER") {
-        chrome.alarms.create("LockedInSession", {
-            when: Date.now() + message.duration
-        });
-        chrome.storage.local.set({
-            StartingTime: Date.now()
-        });
-
-        console.log("created timer");
-        initializeSessionStats();
-        chrome.action.setIcon({
-            path: "/assets/lock.png"
-        }); // Change icon to locked
-    } else if (message.type === "PAUSE_TIMER") {
-        chrome.alarms.clear("LockedInSession");
-        chrome.storage.local.get([
-            "StartingTime",
-            "RemainingTime"
-        ], function (data) {
-            const elapsedTime = Date.now() - data.StartingTime;
-            chrome.storage.local.set({
-                RemainingTime: (data.RemainingTime - elapsedTime)
-            });
-        });
-        chrome.action.setIcon({
-            path: "/assets/unlock.png"
-        }); // Change icon to unlocked
-
-        console.log("Alarm \"Paused\"");
-    } else if (message.type === "CONTINUE_TIMER") {
-        chrome.storage.local.get(["RemainingTime"], function (data) {
-            chrome.alarms.create("LockedInSession", {
-                when: Date.now() + data.RemainingTime
-            });
-
-            chrome.storage.local.set({
-                StartingTime: Date.now()
-            });
-            chrome.action.setIcon({
-                path: "/assets/lock.png"
-            }); // Change icon to locked
-        });
+        const endTime = Date.now() + message.duration;
+        chrome.storage.local.set({ sessionEndTime: endTime, lockedInState: 1 });
+        startTimerInterval();
+        chrome.action.setIcon({ path: "/assets/lock.png" });
     } else if (message.type === "STOP_TIMER") {
-        chrome.alarms.clear("LockedInSession");
-        chrome.storage.local.set({
-            RemainingTime: (0)
-        });
+        stopTimer();
     }
-
-    sendResponse();
-    return true;
+    return true; // Indicates asynchronous response
 });
 
-chrome.alarms.onAlarm.addListener(async function (alarm) {
-    if (alarm.name === "LockedInSession") {
-        console.log("Lockdown timer ended!");
-        chrome.action.setIcon({
-            path: "/assets/unlock.png"
-        }); // Change icon to unlocked
-        chrome.storage.local.set({
-            LockedInState: 0
-        });
-
-        // Clear all session-unlocked domains
-        const sessionData = await chrome.storage.session.get(null);
-        const keysToRemove = [];
-        Object.keys(sessionData).forEach(function (key) {
-            if (key.startsWith("unlocked_")) {
-                keysToRemove.push(key);
-            }
-        });
-        await chrome.storage.session.remove(keysToRemove);
-        console.log("Cleared all session-unlocked domains.");
-
-        // Get the currently active tab to finalize stats
-        const [tab] = await chrome.tabs.query({
-            active: true,
-            currentWindow: true
-        });
-        if (tab) {
-            const sessionEndData = {};
-            sessionEndData[STATS.SESSION_END] = Date.now();
-            await updateSessionStats(tab);
-            chrome.storage.local.set(sessionEndData);
+function startTimerInterval() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(async () => {
+        const { sessionEndTime } = await chrome.storage.local.get("sessionEndTime");
+        if (!sessionEndTime) {
+            stopTimer();
+            return;
         }
-
-        chrome.windows.create({
-            height: 690,
-            type: "popup",
-            url: "../html/alert.html",
-            width: 865
-        });
-
-        // Send a message to the popup to load page 3
-        chrome.runtime.sendMessage({
-            page: 3,
-            type: "LOAD_PAGE"
-        });
-    }
-});
-
-// StatTrak -------------------------------
-// Constants for session statistics keys
-const STATS = {
-    CURRENT_TAB: "currentTab",
-    DISTRACTING_TIME: "distractingTime",
-    LAST_ACTIVE_TIME: "lastActiveTime",
-    PRODUCTIVE_TIME: "productiveTime",
-    SESSION_END: "sessionEnd",
-    SESSION_START: "sessionStart"
-};
-
-function initializeSessionStats() {
-    const initialStats = {};
-    initialStats[STATS.CURRENT_TAB] = null;
-    initialStats[STATS.DISTRACTING_TIME] = 0;
-    initialStats[STATS.LAST_ACTIVE_TIME] = Date.now();
-    initialStats[STATS.PRODUCTIVE_TIME] = 0;
-    initialStats[STATS.SESSION_END] = null;
-    initialStats[STATS.SESSION_START] = Date.now();
-    chrome.storage.local.set(initialStats);
+        const remainingTime = sessionEndTime - Date.now();
+        if (remainingTime <= 0) {
+            stopTimer();
+            chrome.windows.create({
+                height: 690,
+                type: "popup",
+                url: "../html/alert.html",
+                width: 865
+            });
+        } else {
+            chrome.runtime.sendMessage({ type: "TIMER_UPDATE", time: remainingTime });
+        }
+    }, 1000);
 }
 
-async function updateSessionStats(newTab) {
-    if (!newTab.url || !newTab.url.startsWith("http")) {
-        return;
-    }
-
-    const now = Date.now();
-    const stats = await chrome.storage.local.get(Object.values(STATS));
-
-    // Calculate time spent on previous tab
-    if (stats.lastActiveTime && stats.currentTab) {
-        const timeSpent = now - stats.lastActiveTime;
-        const isDistracting = await isDomainDistracting(
-            new URL(stats.currentTab).hostname
-        );
-
-        const updatedStats = {};
-        updatedStats[STATS.CURRENT_TAB] = newTab.url;
-        updatedStats[STATS.LAST_ACTIVE_TIME] = now;
-
-        if (isDistracting) {
-            updatedStats[STATS.DISTRACTING_TIME] =
-                (stats.distractingTime || 0) + timeSpent;
-        } else {
-            updatedStats[STATS.PRODUCTIVE_TIME] =
-                (stats.productiveTime || 0) + timeSpent;
-        }
-
-        await chrome.storage.local.set(updatedStats);
-    } else {
-        // First tab of session
-        const firstTabStats = {};
-        firstTabStats[STATS.CURRENT_TAB] = newTab.url;
-        firstTabStats[STATS.LAST_ACTIVE_TIME] = now;
-        await chrome.storage.local.set(firstTabStats);
-    }
+function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    chrome.storage.local.set({ sessionEndTime: null, lockedInState: 0 });
+    chrome.runtime.sendMessage({ type: "TIMER_UPDATE", time: 0 });
+    chrome.action.setIcon({ path: "/assets/unlock.png" });
 }
