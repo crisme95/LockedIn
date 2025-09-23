@@ -4,25 +4,23 @@ export function init() {
     const hoursInput = document.getElementById('hours');
     const minutesInput = document.getElementById('minutes');
     const secondsInput = document.getElementById('seconds');
-    const startBtn = document.getElementById("start-btn");
-    const pauseBtn = document.getElementById("pause-btn");
+    const startPauseBtn = document.getElementById("start-pause-btn");
     const stopBtn = document.getElementById("stop-btn");
 
-    startBtn.addEventListener("click", () => {
-        const duration = ((parseInt(hoursInput.value || 0) * 3600) +
-                        (parseInt(minutesInput.value || 0) * 60) +
-                        (parseInt(secondsInput.value || 0))) * 1000;
-        if (duration > 0) {
-            chrome.runtime.sendMessage({ type: "START_TIMER", duration });
-        }
-    });
-
-    pauseBtn.addEventListener("click", () => {
-        chrome.storage.local.get("timerPaused", ({ timerPaused }) => {
-            if (timerPaused) {
-                chrome.runtime.sendMessage({ type: "CONTINUE_TIMER" });
-            } else {
+    startPauseBtn.addEventListener("click", () => {
+        chrome.storage.local.get(["lockedInState"], ({ lockedInState }) => {
+            if (lockedInState === 1) { // Running
                 chrome.runtime.sendMessage({ type: "PAUSE_TIMER" });
+            } else { // Stopped or Paused
+                const duration = ((parseInt(hoursInput.value || 0) * 3600) +
+                    (parseInt(minutesInput.value || 0) * 60) +
+                    (parseInt(secondsInput.value || 0))) * 1000;
+
+                if (lockedInState === 2) { // Paused
+                     chrome.runtime.sendMessage({ type: "CONTINUE_TIMER" });
+                } else if (duration > 0) { // Stopped
+                    chrome.runtime.sendMessage({ type: "START_TIMER", duration });
+                }
             }
         });
     });
@@ -37,9 +35,16 @@ export function init() {
         }
     });
 
+    // Listen for changes in storage and update the UI
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'local' && changes.lockedInState) {
+            updateButtonStates(changes.lockedInState.newValue);
+        }
+    });
+
     // Update UI based on storage state when popup opens
-    chrome.storage.local.get(["lockedInState", "sessionEndTime", "timeRemainingWhenPaused", "timerPaused"], (data) => {
-        updateButtonStates(data.lockedInState, data.timerPaused);
+    chrome.storage.local.get(["lockedInState", "sessionEndTime", "timeRemainingWhenPaused"], (data) => {
+        updateButtonStates(data.lockedInState);
         if (data.lockedInState === 1) { // Running
             updateTimerDisplay(data.sessionEndTime - Date.now());
         } else if (data.lockedInState === 2) { // Paused
@@ -50,30 +55,34 @@ export function init() {
     });
 }
 
-async function updateButtonStates(state, isPaused) {
-    const startBtn = document.getElementById("start-btn");
-    const pauseBtn = document.getElementById("pause-btn");
-    const stopBtn = document.getElementById("stop-btn");
+function updateButtonStates(state) {
+    return new Promise((resolve) => {
+        const startPauseBtn = document.getElementById("start-pause-btn");
+        const stopBtn = document.getElementById("stop-btn");
 
-    if (state === 0) { // Neutral/Stopped
-        startBtn.disabled = false;
-        pauseBtn.disabled = true;
-        stopBtn.disabled = true;
-        pauseBtn.textContent = "Pause";
-    } else if (state === 1) { // Running
-        startBtn.disabled = true;
-        pauseBtn.disabled = false;
-        stopBtn.disabled = false;
-        pauseBtn.textContent = "Pause";
-    } else if (state === 2) { // Paused
-        startBtn.disabled = true;
-        pauseBtn.disabled = false;
-        stopBtn.disabled = false;
-        pauseBtn.textContent = "Continue";
-    }
+        if (state === 0) { // Neutral/Stopped
+            startPauseBtn.textContent = "Start";
+            startPauseBtn.disabled = false;
+            stopBtn.style.display = "none";
+            startPauseBtn.classList.remove("paused");
+        } else if (state === 1) { // Running
+            startPauseBtn.textContent = "Pause";
+            startPauseBtn.disabled = false;
+            stopBtn.style.display = "inline-block";
+            startPauseBtn.classList.remove("paused");
+        } else if (state === 2) { // Paused
+            startPauseBtn.textContent = "Start";
+            startPauseBtn.disabled = false;
+            stopBtn.style.display = "inline-block";
+            startPauseBtn.classList.add("paused");
+        }
+
+        // Use requestAnimationFrame to ensure DOM updates are complete
+        requestAnimationFrame(() => resolve());
+    });
 }
 
-async function updateTimerDisplay(ms) {
+function updateTimerDisplay(ms) {
     const hoursEl = document.getElementById("hours");
     const minutesEl = document.getElementById("minutes");
     const secondsEl = document.getElementById("seconds");
@@ -96,9 +105,9 @@ async function updateTimerDisplay(ms) {
     hoursEl.value = String(hours).padStart(2, '0');
     minutesEl.value = String(minutes).padStart(2, '0');
     secondsEl.value = String(seconds).padStart(2, '0');
-    
+
     // Also update button states based on timer activity
-    chrome.storage.local.get(["lockedInState", "timerPaused"], (data) => {
-        updateButtonStates(data.lockedInState, data.timerPaused);
+    chrome.storage.local.get(["lockedInState"], (data) => {
+        updateButtonStates(data.lockedInState);
     });
 }

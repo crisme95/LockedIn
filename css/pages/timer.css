@@ -1,4 +1,4 @@
-/* timer.css */
+/* css/pages/timer.css */
 
 #timer {
     display: flex;
@@ -44,18 +44,6 @@
     border-radius: 4px;
 }
 
-#start-btn {
-    width: 100px;
-    height: 40px;
-    font-size: 16px;
-    text-align: center;
-    background: #34da92;
-    color: rgb(255, 255, 255);
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
 #content {
   display: block;
 }
@@ -77,12 +65,12 @@
     min-width: 80px;
 }
 
-#start-btn {
+#start-pause-btn {
     background-color: #28a745; /* Green */
 }
 
-#pause-btn {
-    background-color: #ffc107; /* Yellow */
+#start-pause-btn.paused {
+    background-color: orange;
 }
 
 #stop-btn {

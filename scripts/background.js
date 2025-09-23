@@ -151,14 +151,19 @@ function startTimerInterval() {
 async function pauseTimer() {
     if (timerInterval) clearInterval(timerInterval);
     const { sessionEndTime } = await chrome.storage.local.get("sessionEndTime");
-    const remainingTime = sessionEndTime - Date.now();
-    chrome.storage.local.set({ timerPaused: true, timeRemainingWhenPaused: remainingTime, lockedInState: 2 });
-}
+    let remainingTime = sessionEndTime - Date.now();
 
+    // Fix: Ensure remaining time is not negative
+    if (remainingTime < 0) {
+        remainingTime = 0;
+    }
+
+    await chrome.storage.local.set({ timerPaused: true, timeRemainingWhenPaused: remainingTime, lockedInState: 2 });
+}
 async function continueTimer() {
     const { timeRemainingWhenPaused } = await chrome.storage.local.get("timeRemainingWhenPaused");
     const newEndTime = Date.now() + timeRemainingWhenPaused;
-    chrome.storage.local.set({ sessionEndTime: newEndTime, timerPaused: false, lockedInState: 1 });
+    await chrome.storage.local.set({ sessionEndTime: newEndTime, timerPaused: false, lockedInState: 1 });
     startTimerInterval();
 }
 
