@@ -1,5 +1,5 @@
 /**
- * Settings page handler for the Locked-In extension.
+ * Settings page handler for the LockedIn extension.
  * Manages distracting domains list, PIN settings, and domain import functionality.
  */
 

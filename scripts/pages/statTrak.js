@@ -1,6 +1,6 @@
 /**
  * StatTrak module for tracking and displaying productivity metrics.
- * Shows how users spend their time during a Locked-In session by comparing
+ * Shows how users spend their time during a LockedIn session by comparing
  * productive vs distracting time usage. Future improvements could include
  * more granular tracking, additional visualizations, or weekly reports.
  */

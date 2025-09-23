@@ -1,4 +1,4 @@
-# Locked-In
+# LockedIn
 
 Chrome Extension to help you Lock In and stay productive.
 
@@ -11,20 +11,20 @@ Chrome Extension to help you Lock In and stay productive.
 
 ---
 
-# Locked-In: Development and User Guide
+# LockedIn: Development and User Guide
 
-Welcome to **Locked-In**, a Chrome extension designed to help you stay focused and productive by managing your time and blocking distracting websites. This guide will walk you through deploying the extension in your browser and using its features effectively.
+Welcome to **LockedIn**, a Chrome extension designed to help you stay focused and productive by managing your time and blocking distracting websites. This guide will walk you through deploying the extension in your browser and using its features effectively.
 
 ---
 
 ## Deployment Guide
 
-To get started with the "Locked-In" extension, you'll need to load it into a Chromium-based browser like Google Chrome or Brave. Since it's not yet packaged for the Chrome Web Store, you'll load it as an **unpacked extension**.
+To get started with the "LockedIn" extension, you'll need to load it into a Chromium-based browser like Google Chrome or Brave. Since it's not yet packaged for the Chrome Web Store, you'll load it as an **unpacked extension**.
 
 ### Steps:
 
 1. **Download the Files:**  
-    Clone the repo onto your computer. Ensure you have the entire `Locked-In` folder, including `manifest.json`, HTML, CSS, and scripts, saved on your computer.
+    Clone the repo onto your computer. Ensure you have the entire `LockedIn` folder, including `manifest.json`, HTML, CSS, and scripts, saved on your computer.
 
 2. **Open Browser Extensions:**  
     - In Chrome: Go to `chrome://extensions`  
@@ -35,7 +35,7 @@ To get started with the "Locked-In" extension, you'll need to load it into a Chr
 
 4. **Load the Extension:**  
     - Click **Load unpacked**.
-    - Select the `Locked-In` folder and click **Select Folder**.
+    - Select the `LockedIn` folder and click **Select Folder**.
 
 5. **Ready to Go!**  
     - The extension should now appear in your extensions list and its icon will be added to your browser's toolbar. You can pin the extension to the toolbar for easier access.
