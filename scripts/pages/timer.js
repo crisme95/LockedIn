@@ -50,7 +50,7 @@ export function init() {
     });
 }
 
-function updateButtonStates(state, isPaused) {
+async function updateButtonStates(state, isPaused) {
     const startBtn = document.getElementById("start-btn");
     const pauseBtn = document.getElementById("pause-btn");
     const stopBtn = document.getElementById("stop-btn");
@@ -73,7 +73,7 @@ function updateButtonStates(state, isPaused) {
     }
 }
 
-function updateTimerDisplay(ms) {
+async function updateTimerDisplay(ms) {
     const hoursEl = document.getElementById("hours");
     const minutesEl = document.getElementById("minutes");
     const secondsEl = document.getElementById("seconds");
