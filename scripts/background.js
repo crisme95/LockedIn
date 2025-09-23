@@ -109,13 +109,22 @@ chrome.alarms.onAlarm.addListener(alarm => {
 // Timer Logic -------------------------------------------
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === "START_TIMER") {
-        const endTime = Date.now() + message.duration;
-        chrome.storage.local.set({ sessionEndTime: endTime, lockedInState: 1 });
-        startTimerInterval();
-        chrome.action.setIcon({ path: "/assets/lock.png" });
-    } else if (message.type === "STOP_TIMER") {
-        stopTimer();
+    switch (message.type) {
+        case "START_TIMER":
+            const endTime = Date.now() + message.duration;
+            chrome.storage.local.set({ sessionEndTime: endTime, lockedInState: 1, timerPaused: false });
+            startTimerInterval();
+            chrome.action.setIcon({ path: "/assets/lock.png" });
+            break;
+        case "PAUSE_TIMER":
+            pauseTimer();
+            break;
+        case "CONTINUE_TIMER":
+            continueTimer();
+            break;
+        case "STOP_TIMER":
+            stopTimer();
+            break;
     }
     return true; // Indicates asynchronous response
 });
@@ -123,19 +132,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 function startTimerInterval() {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(async () => {
-        const { sessionEndTime } = await chrome.storage.local.get("sessionEndTime");
-        if (!sessionEndTime) {
-            stopTimer();
+        const { sessionEndTime, timerPaused } = await chrome.storage.local.get(["sessionEndTime", "timerPaused"]);
+        if (!sessionEndTime || timerPaused) {
             return;
         }
         const remainingTime = sessionEndTime - Date.now();
         if (remainingTime <= 0) {
             stopTimer();
             chrome.windows.create({
-                height: 690,
-                type: "popup",
-                url: "../html/alert.html",
-                width: 865
+                height: 690, type: "popup", url: "../html/alert.html", width: 865
             });
         } else {
             chrome.runtime.sendMessage({ type: "TIMER_UPDATE", time: remainingTime });
@@ -143,9 +148,28 @@ function startTimerInterval() {
     }, 1000);
 }
 
+async function pauseTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    const { sessionEndTime } = await chrome.storage.local.get("sessionEndTime");
+    let remainingTime = sessionEndTime - Date.now();
+
+    // Fix: Ensure remaining time is not negative
+    if (remainingTime < 0) {
+        remainingTime = 0;
+    }
+
+    await chrome.storage.local.set({ timerPaused: true, timeRemainingWhenPaused: remainingTime, lockedInState: 2 });
+}
+async function continueTimer() {
+    const { timeRemainingWhenPaused } = await chrome.storage.local.get("timeRemainingWhenPaused");
+    const newEndTime = Date.now() + timeRemainingWhenPaused;
+    await chrome.storage.local.set({ sessionEndTime: newEndTime, timerPaused: false, lockedInState: 1 });
+    startTimerInterval();
+}
+
 function stopTimer() {
     if (timerInterval) clearInterval(timerInterval);
-    chrome.storage.local.set({ sessionEndTime: null, lockedInState: 0 });
+    chrome.storage.local.set({ sessionEndTime: null, lockedInState: 0, timerPaused: false, timeRemainingWhenPaused: 0 });
     chrome.runtime.sendMessage({ type: "TIMER_UPDATE", time: 0 });
     chrome.action.setIcon({ path: "/assets/unlock.png" });
 }

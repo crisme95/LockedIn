@@ -1,4 +1,4 @@
-/* timer.css */
+/* css/pages/timer.css */
 
 #timer {
     display: flex;
@@ -44,18 +44,45 @@
     border-radius: 4px;
 }
 
-#start-btn {
-    width: 100px;
-    height: 40px;
-    font-size: 16px;
-    text-align: center;
-    background: #34da92;
-    color: rgb(255, 255, 255);
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
 #content {
   display: block;
+}
+
+#timer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.timer-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    color: white;
+    min-width: 80px;
+}
+
+
+#start-pause-btn {
+    background-color: green; /* Initial color for Start */
+}
+
+#start-pause-btn.running {
+    background-color: orange;
+}
+
+#start-pause-btn.paused {
+    background-color: green;
+}
+
+#stop-btn {
+    background-color: #dc3545; /* Red */
+}
+
+.timer-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
 }
