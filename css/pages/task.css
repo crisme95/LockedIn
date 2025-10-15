@@ -28,7 +28,7 @@
     background-color: #0056b3;
 }
 
-#task-list {
+#task-list, #burn-list {
     list-style: none;
     padding: 0;
 }
@@ -36,7 +36,7 @@
 .task-item {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
     margin-bottom: 8px;
     flex-wrap: wrap;
 }
@@ -107,4 +107,37 @@
 .subtask-list {
   flex-basis: 100%;
   margin-left: 20px;
+}
+
+/* New Styles for Burn List */
+#burn-list-container {
+    border-left: 4px solid #ff6f00; /* Orange accent */
+}
+
+#burn-list {
+    min-height: 40px;
+}
+
+.burn-session-btn {
+    padding: 10px;
+    background-color: #ff8c00;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.burn-session-btn:hover {
+    background-color: #e67e00;
+}
+
+.burn-list-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 5px;
 }
