@@ -1,139 +1,134 @@
 /**
- * @task Runs User Interaction Logic Related to the Task Manager and Handles UI Visuals
+ * @file Reworked task management using OOP principles.
+ * Defines Task and TaskManager classes to handle UI and data logic.
  */
 
+class Task {
+    constructor(text, subtasks = [], taskManager) {
+        this.text = text;
+        this.subtasks = subtasks.map(sub => new Task(sub.text, [], taskManager)); // Subtasks are also Tasks
+        this.taskManager = taskManager;
+    }
 
+    render() {
+        // Create the main list item
+        const li = document.createElement("li");
+        li.className = "task-item";
 
-// temporary storage for UI visuals
-let taskData = [];
+        // Create the input for the task text
+        const taskInput = document.createElement("input");
+        taskInput.type = "text";
+        taskInput.value = this.text;
+        taskInput.addEventListener("input", () => {
+            this.text = taskInput.value;
+            this.taskManager.saveTasks();
+        });
 
-export function init() {
+        // Create the remove button for the task
+        const removeBtn = document.createElement("span");
+        removeBtn.className = "remove-task";
+        removeBtn.textContent = "✕";
+        removeBtn.addEventListener("click", () => {
+            this.taskManager.removeTask(this);
+        });
 
-    // retrieve html elements by id
-    const input = document.getElementById("task-input");
-    const addBtn = document.getElementById("add-task");
-    const list = document.getElementById("task-list");
+        li.append(removeBtn, taskInput);
 
-    // Load saved tasks into taskData[]
-    chrome.storage.local.get(['tasks'], (result) => {
-        taskData = (result.tasks || []).map(t => ({
-        text:      t.text,
-        subtasks:  Array.isArray(t.subtasks) ? t.subtasks : []
-        }));
-        Render();
-    });
+        // --- Subtask Section ---
+        const subtaskList = document.createElement("ul");
+        subtaskList.className = "subtask-list";
+        this.subtasks.forEach(subtask => {
+            subtaskList.appendChild(subtask.render());
+        });
 
-    // assign button functionality
-    addBtn.addEventListener("click", () => {
-        const taskText = input.value.trim();
-        if (taskText === "") return;
+        // --- "Add subtask" input and button ---
+        const subInputBar = document.createElement("div");
+        subInputBar.className = "subtask-input-bar";
 
-        taskData.push({ text: taskText, subtasks: [] });
-        input.value = "";
-        SaveTasks();
-        Render();
-    });
+        const newSubInput = document.createElement("input");
+        newSubInput.type = "text";
+        newSubInput.placeholder = "Add a subtask…";
 
-    /*********************************************************************************************************************************************************************************************/
-
-    /**
-     * Renders UI Using Data From taskData[]
-     */
-    function Render() {
-        list.innerHTML = "";
-
-        // loops through taskData[], then inserts into html list as a input-text with button
-        taskData.forEach((task, tIndex) => {
-            // create new list element : newTask
-            const newTask = document.createElement("li");
-            newTask.className = "task-item";
-
-            // create new input text element : taskInput
-            const taskInput = document.createElement("input");
-            taskInput.type = "text";
-            taskInput.value = task.text;
-
-            // assign eventListener to taskInput
-            taskInput.addEventListener("input", () => {
-                taskData[tIndex].text = taskInput.value;
-                SaveTasks();
-            });
-
-            // create new button element : removeBtn
-            const removeBtn = document.createElement("span");
-            removeBtn.className = "remove-task";
-            removeBtn.textContent = "✕";
-
-            // assign eventListener to removeBtn
-            removeBtn.addEventListener("click", () => {
-                taskData.splice(tIndex, 1);
-                SaveTasks();
-                Render();
-            });
-
-            // adds both removeBtn & taskInput to list element, then adds newTask to html list
-            newTask.appendChild(removeBtn);
-            newTask.appendChild(taskInput);
-
-            // — Subtask container —
-            const subtaskList = document.createElement("ul");
-            subtaskList.className = "subtask-list";
-
-            // Render each existing subtask
-            task.subtasks.forEach((sub, sIndex) => {
-            const subLi = document.createElement("li");
-            subLi.className = "subtask-item";
-
-            const subInput = document.createElement("input");
-            subInput.type = "text";
-            subInput.value = sub.text;
-            subInput.addEventListener("input", () => {
-                taskData[tIndex].subtasks[sIndex].text = subInput.value;
-                SaveTasks();
-            });
-
-            const subRemove = document.createElement("span");
-            subRemove.className = "remove-subtask";
-            subRemove.textContent = "✕";
-            subRemove.addEventListener("click", () => {
-                taskData[tIndex].subtasks.splice(sIndex, 1);
-                SaveTasks();
-                Render();
-            });
-
-            subLi.append(subRemove, subInput);
-            subtaskList.appendChild(subLi);
-            });
-
-            // — “Add subtask” input + button —
-            const subInputBar = document.createElement("div");
-            subInputBar.className = "subtask-input-bar";
-
-            const newSubInput = document.createElement("input");
-            newSubInput.type = "text";
-            newSubInput.placeholder = "Add a subtask…";
-
-            const addSubBtn = document.createElement("button");
-            addSubBtn.textContent = "+";
-            addSubBtn.addEventListener("click", () => {
+        const addSubBtn = document.createElement("button");
+        addSubBtn.textContent = "+";
+        addSubBtn.addEventListener("click", () => {
             const txt = newSubInput.value.trim();
-            if (!txt) return;
-            taskData[tIndex].subtasks.push({ text: txt });
-            newSubInput.value = "";
-            SaveTasks();
-            Render();
-            });
+            if (txt) {
+                this.subtasks.push(new Task(txt, [], this.taskManager));
+                newSubInput.value = "";
+                this.taskManager.saveAndRender();
+            }
+        });
 
-            subInputBar.append(newSubInput, addSubBtn);
+        subInputBar.append(newSubInput, addSubBtn);
+        li.append(subtaskList, subInputBar);
 
-            // — Nest it all under this task —
-            newTask.append(subtaskList,subInputBar);
+        return li;
+    }
 
-            list.appendChild(newTask);
+    // toJSON is used by JSON.stringify
+    toJSON() {
+        return {
+            text: this.text,
+            subtasks: this.subtasks,
+        };
+    }
+}
+
+class TaskManager {
+    constructor(inputEl, addBtnEl, listEl) {
+        this.input = inputEl;
+        this.addBtn = addBtnEl;
+        this.list = listEl;
+        this.tasks = [];
+
+        this.addBtn.addEventListener("click", () => this.addTask());
+    }
+
+    loadTasks() {
+        chrome.storage.local.get(['tasks'], (result) => {
+            const tasksData = result.tasks || [];
+            this.tasks = tasksData.map(t => new Task(t.text, t.subtasks, this));
+            this.render();
         });
     }
 
-    function SaveTasks() {
-        chrome.storage.local.set({ tasks: taskData });
+    saveTasks() {
+        chrome.storage.local.set({ tasks: this.tasks });
     }
+
+    saveAndRender() {
+        this.saveTasks();
+        this.render();
+    }
+
+    addTask() {
+        const taskText = this.input.value.trim();
+        if (taskText === "") return;
+
+        this.tasks.push(new Task(taskText, [], this));
+        this.input.value = "";
+        this.saveAndRender();
+    }
+
+    removeTask(taskToRemove) {
+        this.tasks = this.tasks.filter(task => task !== taskToRemove);
+        this.saveAndRender();
+    }
+
+    render() {
+        this.list.innerHTML = "";
+        this.tasks.forEach(task => {
+            this.list.appendChild(task.render());
+        });
+    }
+}
+
+export function init() {
+    const taskInput = document.getElementById("task-input");
+    const addTaskBtn = document.getElementById("add-task");
+    const taskList = document.getElementById("task-list");
+
+    const taskManager = new TaskManager(taskInput, addTaskBtn, taskList);
+    taskManager.loadTasks();
 }
